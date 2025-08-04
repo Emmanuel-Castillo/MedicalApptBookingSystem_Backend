@@ -45,7 +45,7 @@ namespace MedicalApptBookingSystem.Migrations
 
                     b.HasIndex("TimeSlotId");
 
-                    b.ToTable("Appointments");
+                    b.ToTable("Appointments", (string)null);
                 });
 
             modelBuilder.Entity("MedicalApptBookingSystem.Models.TimeSlot", b =>
@@ -72,7 +72,7 @@ namespace MedicalApptBookingSystem.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("TimeSlots");
+                    b.ToTable("TimeSlots", (string)null);
                 });
 
             modelBuilder.Entity("MedicalApptBookingSystem.Models.User", b =>
@@ -100,7 +100,7 @@ namespace MedicalApptBookingSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("MedicalApptBookingSystem.Models.Appointment", b =>

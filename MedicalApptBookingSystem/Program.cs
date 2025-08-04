@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using MedicalApptBookingSystem.Services;
+using MedicalApptBookingSystem.Util;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -38,6 +39,22 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ConvertToDto>();
+
+// Adding CORS (Cross-Origin Resource Sharing) policy
+// By default, browsers restrict requests between different origins
+// (different domains, ports, protocols, etc.)
+// This server must allow requests from frontend, allow credentials in the request, and allow methods in the request
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactFrontend", policy =>
+    {
+        policy.WithOrigins("https://localhost:3000")    // Allow this specific frontend
+        .AllowAnyHeader()   // Allow any custom or default HTTP headers
+        .AllowAnyMethod()   // Allow GET, POST, PUT, etc.
+        .AllowCredentials();    // CRITICAL when using cookies or sending 'withCredentials: true' from frontend
+    });
+});
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -50,7 +67,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+
 app.UseHttpsRedirection();
+
+// MUST BE PLACED BEFORE UseAuthentication() AND UseAuthorization()
+app.UseCors("AllowReactFrontend");
 
 // Use authentication middleware
 app.UseAuthentication();

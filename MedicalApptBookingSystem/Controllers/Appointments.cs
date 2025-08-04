@@ -1,6 +1,8 @@
-﻿using MedicalApptBookingSystem.Data;
-using MedicalApptBookingSystem.DTO;
+﻿using Azure.Core;
+using MedicalApptBookingSystem.Data;
+using MedicalApptBookingSystem.DTO.Requests;
 using MedicalApptBookingSystem.Models;
+using MedicalApptBookingSystem.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,122 +11,187 @@ using System.Security.Claims;
 
 namespace MedicalApptBookingSystem.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("appointments")]
     [ApiController]
     public class Appointments : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        public Appointments(ApplicationDbContext context)
+        private ConvertToDto _convertToDto;
+        public Appointments(ApplicationDbContext context, ConvertToDto convertToDto)
         {
             _context = context;
+            _convertToDto = convertToDto;
         }
 
-        // This endpoint is authorized only for Patients
-        [HttpPost]
-        [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentsDto dto)
+        // This endpoint is authorized ONLY for Patients and Admins
+        [HttpPost("book")]
+        [Authorize(Roles = "Patient, Admin")]
+        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentsRequest request)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null) return Unauthorized();
+            try { 
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
 
-            // Check if requested time slot is doesn't exist or if it's been booked
-            var timeSlot = await _context.TimeSlots.FindAsync(dto.TimeSlotId);
-            if (timeSlot == null || timeSlot.IsBooked) return BadRequest("Invalid or already booked time slot.");
+                int patientId;
 
-            // Set new appointment
-            var appointment = new Appointment
-            {
-                TimeSlotId = timeSlot.Id,
-                PatientId = int.Parse(userId)
-            };
+                // If patient id provided in request, check if curr auth User is Admin
+                // Assign patientId query param with requested id
+                if (!string.IsNullOrEmpty(request.PatientId)) {
+                    if (userRole != "Admin")
+                    {
+                        return Forbid("Attempting to book a Patient's appointment, but the current auth User is not and Admin.");
+                    }
+                    patientId = int.Parse(request.PatientId);
+                }
+                // Else assign patientId with curr User id ONLY if User is Patient
+                else if (userRole == "Patient")
+                {
+                    patientId = int.Parse(userId);
+                }
+                else
+                {
+                    return BadRequest("Something went wrong with this request. Try again");
+                }
 
-            // Set requested time slot as booked
-            timeSlot.IsBooked = true;
+                // Check if requested time slot is doesn't exist or if it's been booked
+                var timeSlot = await _context.TimeSlots.FindAsync(request.TimeSlotId);
+                if (timeSlot == null || timeSlot.IsBooked) return BadRequest("Invalid or already booked time slot.");
 
-            _context.Appointments.Add(appointment);
-            await _context.SaveChangesAsync();
+                // Set new appointment
+                var appointment = new Appointment
+                {
+                    TimeSlotId = timeSlot.Id,
+                    PatientId = patientId
+                };
 
-            return Ok("Appointment booked successfully.");
+                // Set requested time slot as booked
+                timeSlot.IsBooked = true;
+
+                _context.Appointments.Add(appointment);
+                await _context.SaveChangesAsync();
+
+                return Ok("Appointment booked successfully.");
+            }
+            catch (Exception ex) {
+                return BadRequest(ex.Message);
+
+            }
+            
         }
 
-        // This endpoint is authorized only for Patients
+        // Endpoint is authorized only for Patients and Admins
+        // Retrieves a particular Patient's appointments
         [HttpGet]
-        [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> GetPatientAppointments()
+        [Authorize(Roles = "Patient, Admin")]
+        public async Task<IActionResult> GetAppointments([FromBody] GetPatientAppointmentsRequest request)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null) return Unauthorized();
+            try {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
 
-            // Fetch all appointments booked by current autheticated user
-            var appointments = await _context.Appointments
-                .Where(a => a.PatientId == int.Parse(userId))
+                int patientId;
+
+                // If patient id provided in request, check if curr auth User is Admin
+                // Assign patientId query param with requested id
+                if (!string.IsNullOrEmpty(request.PatientId))
+                {
+                    if (userRole != "Admin")
+                    {
+                        return Forbid("Attempting to book a Patient's appointment, but the current auth User is not and Admin.");
+                    }
+                    patientId = int.Parse(request.PatientId);
+                }
+                // Else assign patientId with curr User id ONLY if User is Patient
+                else if (userRole == "Patient")
+                {
+                    patientId = int.Parse(userId);
+                }
+                else
+                {
+                    return BadRequest("Something went wrong with this request. Try again");
+                }
+
+                // Fetch all appointments booked by current autheticated user
+                var appointments = await _context.Appointments
+                .Where(a => a.PatientId == patientId)
                 .Include(a => a.TimeSlot)
                 .ThenInclude(t => t.Doctor)
                 .ToListAsync();
 
-            var appointmentsDto = ConvertToDto(appointments);
+                var appointmentsDto = _convertToDto.ConvertToListAppointmentDto(appointments);
 
-            return Ok(appointmentsDto);
+                return Ok(appointmentsDto); 
+            }
+            catch (Exception ex) {
+                return BadRequest(ex.Message);
+            }
+            
         }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Patient, Admin")]
+        public async Task<IActionResult> GetAppointment(int id)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
+
+                // Fetch appointment
+                var appt = await _context.Appointments.FirstOrDefaultAsync(appt => appt.Id == id);
+
+                if (appt == null) return NotFound("Appointment not found.");
+
+                // If curr auth User is Patient, check that heir id matches appt's patient id
+                if (userRole == "Patient" && int.Parse(userId) != appt.PatientId)
+                {
+                    return Forbid("Trying to access another patient's appointment.");
+                }
+
+                var apptDto = _convertToDto.ConvertToAppointmentDto(appt);
+                return Ok(apptDto);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         [HttpDelete]
-        [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> CancelAppointment(DeleteAppointmentDto dto)
+        [Authorize(Roles = "Patient, Admin")]
+        public async Task<IActionResult> CancelAppointment(DeleteAppointmentRequest request)
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdStr == null) return Unauthorized();
+            try {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
 
-            var userId = int.Parse(userIdStr);
-            // Find appointment (include TimeSlot to update IsBooked)
-            var appointment = await _context.Appointments
-                .Include(a => a.TimeSlot)
-                .FirstOrDefaultAsync(a => a.Id == dto.AppointmentId && a.PatientId == userId);
+                // Find appointment (include TimeSlot to update IsBooked)
+                var appointment = await _context.Appointments
+                    .Include(a => a.TimeSlot)
+                    .FirstOrDefaultAsync(a => a.Id == request.AppointmentId);
 
-            if (appointment == null)
-                return NotFound("Appointment not found or not owned by the current user");
+                if (appointment == null)
+                    return NotFound("Appointment not found or not owned by the current user");
 
-            // Set time slot from appointment property IsBooked back to false
-            appointment.TimeSlot.IsBooked = false;
+                // Set time slot from appointment property IsBooked back to false
+                appointment.TimeSlot.IsBooked = false;
 
-            // Delete appointment
-            _context.Appointments.Remove(appointment);
+                // Delete appointment
+                _context.Appointments.Remove(appointment);
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-            return Ok("Appointment successfully cancelled.");
-
-        }
-    
-        private List<AppointmentDto> ConvertToDto(List<Appointment> appointments)
-        {
-            var appointmentsDto = appointments.Select(a => new AppointmentDto
-            {
-                Id = a.Id,
-                PatientId = a.PatientId,
-                Patient = new UserDto
-                {
-                    Id = a.Patient.Id,
-                    Email = a.Patient.Email,
-                    FullName = a.Patient.FullName,
-                },
-                TimeSlotId = a.TimeSlot.Id,
-                TimeSlot = new TimeSlotDto
-                {
-                    Id = a.TimeSlot.Id,
-                    StartTime = a.TimeSlot.StartTime,
-                    EndTime = a.TimeSlot.EndTime,
-                    Doctor = new UserDto
-                    {
-                        Id = a.TimeSlot.Doctor.Id,
-                        FullName = a.TimeSlot.Doctor.FullName,
-                        Email = a.TimeSlot.Doctor.Email
-                    },
-                    IsBooked = a.TimeSlot.IsBooked,
-                },
-                Notes = a.Notes
-            }).ToList();
-
-            return appointmentsDto;
+                return Ok("Appointment successfully cancelled.");
+            }
+            catch (Exception ex) {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
