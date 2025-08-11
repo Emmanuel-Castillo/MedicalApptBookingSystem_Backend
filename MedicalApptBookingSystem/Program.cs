@@ -47,9 +47,19 @@ builder.Services.AddScoped<ConvertToDto>();
 // This server must allow requests from frontend, allow credentials in the request, and allow methods in the request
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactFrontend", policy =>
+    options.AddPolicy("AllowReactFrontendDev", policy =>
     {
         policy.WithOrigins("https://localhost:3000")    // Allow this specific frontend
+        .AllowAnyHeader()   // Allow any custom or default HTTP headers
+        .AllowAnyMethod()   // Allow GET, POST, PUT, etc.
+        .AllowCredentials();    // CRITICAL when using cookies or sending 'withCredentials: true' from frontend
+    });
+});
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactFrontendProd", policy =>
+    {
+        policy.WithOrigins("https://medical-appt-booking-system-fronten.vercel.app/")    // Allow this specific frontend
         .AllowAnyHeader()   // Allow any custom or default HTTP headers
         .AllowAnyMethod()   // Allow GET, POST, PUT, etc.
         .AllowCredentials();    // CRITICAL when using cookies or sending 'withCredentials: true' from frontend
@@ -71,7 +81,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // MUST BE PLACED BEFORE UseAuthentication() AND UseAuthorization()
-app.UseCors("AllowReactFrontend");
+app.UseCors("AllowReactFrontendDev");
+app.UseCors("AllowreactFrontendProd");
 
 // Use authentication middleware
 app.UseAuthentication();
