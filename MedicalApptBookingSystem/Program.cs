@@ -47,24 +47,19 @@ builder.Services.AddScoped<ConvertToDto>();
 // This server must allow requests from frontend, allow credentials in the request, and allow methods in the request
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactFrontendDev", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:3000")    // Allow this specific frontend
-        .AllowAnyHeader()   // Allow any custom or default HTTP headers
-        .AllowAnyMethod()   // Allow GET, POST, PUT, etc.
-        .AllowCredentials();    // CRITICAL when using cookies or sending 'withCredentials: true' from frontend
+        policy
+            .WithOrigins(
+                "https://localhost:3000",
+                "https://medical-appt-booking-system-fronten.vercel.app"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowReactFrontendProd", policy =>
-    {
-        policy.WithOrigins("https://medical-appt-booking-system-fronten.vercel.app/")    // Allow this specific frontend
-        .AllowAnyHeader()   // Allow any custom or default HTTP headers
-        .AllowAnyMethod()   // Allow GET, POST, PUT, etc.
-        .AllowCredentials();    // CRITICAL when using cookies or sending 'withCredentials: true' from frontend
-    });
-});
+
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -81,8 +76,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // MUST BE PLACED BEFORE UseAuthentication() AND UseAuthorization()
-app.UseCors("AllowReactFrontendDev");
-app.UseCors("AllowreactFrontendProd");
+app.UseCors("AllowReactFrontend");
 
 // Use authentication middleware
 app.UseAuthentication();
