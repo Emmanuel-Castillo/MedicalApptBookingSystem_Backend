@@ -106,7 +106,7 @@ namespace MedicalApptBookingSystem.Controllers
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == patientIdInt);
 
                 if (user == null) {
-                    return BadRequest("User not found!");
+                    return NotFound("User not found!");
                 }
 
                 // Fetch appts booked by patient
@@ -157,7 +157,7 @@ namespace MedicalApptBookingSystem.Controllers
 
                 if (doctor == null)
                 {
-                    return BadRequest("User not found!");
+                    return NotFound("User not found!");
                 }
 
                 // Fetch time slots created by patient (both booked and not booked)

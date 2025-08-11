@@ -1,4 +1,5 @@
 ﻿using MedicalApptBookingSystem.Models;
+using MedicalApptBookingSystemTest;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace MedicalApptBookingSystem.Services
 {
-    public class AuthService
+    public class AuthService: IAuthService
     {
         private readonly IConfiguration _config;
 

@@ -13,11 +13,11 @@ namespace MedicalApptBookingSystem.Controllers
 {
     [Route("appointments")]
     [ApiController]
-    public class Appointments : ControllerBase
+    public class AppointmentsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private ConvertToDto _convertToDto;
-        public Appointments(ApplicationDbContext context, ConvertToDto convertToDto)
+        public AppointmentsController(ApplicationDbContext context, ConvertToDto convertToDto)
         {
             _context = context;
             _convertToDto = convertToDto;
@@ -40,7 +40,7 @@ namespace MedicalApptBookingSystem.Controllers
                 if (!string.IsNullOrEmpty(request.PatientId)) {
                     if (userRole != "Admin")
                     {
-                        return Forbid("Attempting to book a Patient's appointment, but the current auth User is not and Admin.");
+                        return Forbid("Attempting to book a Patient's appointment, but the current auth User is not an Admin.");
                     }
                     patientId = int.Parse(request.PatientId);
                 }
@@ -99,7 +99,7 @@ namespace MedicalApptBookingSystem.Controllers
                 {
                     if (userRole != "Admin")
                     {
-                        return Forbid("Attempting to book a Patient's appointment, but the current auth User is not and Admin.");
+                        return Forbid("Attempting to retrieve a Patient's appointment, but the current auth User is not an Admin.");
                     }
                     patientId = int.Parse(request.PatientId);
                 }
@@ -142,7 +142,11 @@ namespace MedicalApptBookingSystem.Controllers
                 if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
 
                 // Fetch appointment
-                var appt = await _context.Appointments.FirstOrDefaultAsync(appt => appt.Id == id);
+                var appt = await _context.Appointments
+                    .Include(a => a.Patient)
+                    .Include(a => a.TimeSlot)
+                    .ThenInclude(ts => ts.Doctor)
+                    .FirstOrDefaultAsync(appt => appt.Id == id);
 
                 if (appt == null) return NotFound("Appointment not found.");
 
@@ -177,7 +181,7 @@ namespace MedicalApptBookingSystem.Controllers
                     .FirstOrDefaultAsync(a => a.Id == request.AppointmentId);
 
                 if (appointment == null)
-                    return NotFound("Appointment not found or not owned by the current user");
+                    return NotFound("Appointment not found or not owned by the current user.");
 
                 // Set time slot from appointment property IsBooked back to false
                 appointment.TimeSlot.IsBooked = false;

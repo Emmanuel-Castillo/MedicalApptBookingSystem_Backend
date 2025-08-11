@@ -1,8 +1,9 @@
-﻿
+﻿ 
 using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.Models;
 using MedicalApptBookingSystem.Services;
+using MedicalApptBookingSystemTest;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,9 +18,9 @@ namespace MedicalApptBookingSystem.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
-        public AuthController(ApplicationDbContext context, AuthService authService)
+        public AuthController(ApplicationDbContext context, IAuthService authService)
         {
             _context = context;
             _authService = authService;
@@ -83,6 +84,7 @@ namespace MedicalApptBookingSystem.Controllers
 
                 // Once credentials are verified, generate JWT token and return back to user for user authentication
                 var token = _authService.GenerateToken(user);
+                var res = new { token };
                 return Ok(new { token });
             }
             catch (Exception ex) {

@@ -8,15 +8,15 @@ namespace MedicalApptBookingSystem.Models
         public int Id { get; set; }
 
         [Required]
-        public DateTime StartTime { get; set; }
+        public required DateTime StartTime { get; set; }
 
         [Required]
-        public DateTime EndTime { get; set; }
+        public required DateTime EndTime { get; set; }
 
         [ForeignKey("Doctor")]
-        public int DoctorId { get; set; }
+        public required int DoctorId { get; set; }
         public User Doctor { get; set; } = null!;
 
-        public bool IsBooked { get; set; }
+        public required bool IsBooked { get; set; }
     }
 }
