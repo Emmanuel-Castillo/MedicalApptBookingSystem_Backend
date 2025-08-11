@@ -76,7 +76,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // MUST BE PLACED BEFORE UseAuthentication() AND UseAuthorization()
-app.UseCors("AllowReactFrontend");
+app.UseCors("AllowFrontend");
 
 // Use authentication middleware
 app.UseAuthentication();
