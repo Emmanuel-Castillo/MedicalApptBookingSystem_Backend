@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text;
 using MedicalApptBookingSystem.Services;
 using MedicalApptBookingSystem.Util;
+using MedicalApptBookingSystemTest;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -17,7 +18,11 @@ builder.Services.AddControllers();
 // Configure db
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"), 
+        sql => sql.EnableRetryOnFailure(
+              maxRetryCount: 5,
+              maxRetryDelay: TimeSpan.FromSeconds(10),
+              errorNumbersToAdd: null)));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -38,7 +43,7 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ConvertToDto>();
 
 // Adding CORS (Cross-Origin Resource Sharing) policy
@@ -57,6 +62,7 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
+            
     });
 });
 

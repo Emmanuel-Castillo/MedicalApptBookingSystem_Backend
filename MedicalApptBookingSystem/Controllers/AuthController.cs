@@ -33,6 +33,7 @@ namespace MedicalApptBookingSystem.Controllers
         {
             try { 
                 // Validate dto
+                
                 if (string.IsNullOrEmpty(dto.FullName))
                     return BadRequest("Full name is required.");
 
