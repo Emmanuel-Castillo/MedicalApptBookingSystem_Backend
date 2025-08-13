@@ -24,6 +24,55 @@ namespace MedicalApptBookingSystem.Controllers
             _convertToDto = convertToDto;
         }
 
+        // Endpoint accessible to all authorized Users
+        // Retrieve UserDto given user id
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserAsync(int id)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+                if (user == null) return NotFound("User not found!");
+
+                var userDto = _convertToDto.ConvertToUserDto(user);
+                return Ok(userDto);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // Endpoint accessible for Admins ONLY
+        // Edit User's data
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> EditUserAsync(ChangeUserRequest request)
+        {
+            try {
+                // Find user
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(request.Id));
+
+                if (user == null) return NotFound("User not found!");
+
+                // Check if request NewEmail has been taken by another User!
+                var userWithNewEmail = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.NewEmail);
+
+                if (userWithNewEmail != null) return BadRequest("This requested new email has already been taken!");
+
+                user.FullName = request.NewFullName;
+                user.Email = request.NewEmail;
+
+                await _context.SaveChangesAsync();
+
+                return Ok("User has been updated!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // Endpoint authorized for Admins ONLY
         // Retrieve ALL users
         [HttpGet("all")]
