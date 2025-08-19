@@ -167,9 +167,9 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
 
-        [HttpDelete]
+        [HttpDelete("{id}")]
         [Authorize(Roles = "Patient, Admin")]
-        public async Task<IActionResult> CancelAppointment(DeleteAppointmentRequest request)
+        public async Task<IActionResult> CancelAppointment(int id)
         {
             try {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -178,7 +178,7 @@ namespace MedicalApptBookingSystem.Controllers
                 // Find appointment (include TimeSlot to update IsBooked)
                 var appointment = await _context.Appointments
                     .Include(a => a.TimeSlot)
-                    .FirstOrDefaultAsync(a => a.Id == request.AppointmentId);
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
                 if (appointment == null)
                     return NotFound("Appointment not found or not owned by the current user.");

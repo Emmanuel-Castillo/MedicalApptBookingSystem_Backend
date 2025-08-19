@@ -1,4 +1,5 @@
 ﻿using MedicalApptBookingSystem.Data;
+using MedicalApptBookingSystem.DTO.Reponses;
 using MedicalApptBookingSystem.DTO.Requests;
 using MedicalApptBookingSystem.Models;
 using MedicalApptBookingSystem.Util;
@@ -30,12 +31,54 @@ namespace MedicalApptBookingSystem.Controllers
             _convertToDto = convertToDto;
         }
 
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Doctor, Admin")]
+        public async Task<IActionResult> GetTimeSlot(int id)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userId == null || userRole == null) return Unauthorized("Attempting to access authorized endpoint.");
+                if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Attempting to access another doctor's time slot.");
+
+                // Search for timeSlot if it exists
+                var timeSlot = await _context.TimeSlots.Where(ts => ts.Id == id).Include(ts => ts.Doctor).FirstOrDefaultAsync();
+                if (timeSlot == null) return NotFound("Time slot not found!");
+
+                var timeSlotDto = _convertToDto.ConvertToTimeSlotDto(timeSlot);
+
+                // Add timeSlotDto to InfoResponse obj
+                var timeSlotInfoResponse = new GetTimeSlotInfoResponse {
+                    TimeSlot = timeSlotDto
+                };
+
+                // If time slot is booked, return appointment that references this time slot
+                if (timeSlot.IsBooked)
+                {
+                    var appointment = await _context.Appointments.Where(a => a.TimeSlotId == timeSlot.Id).Include(a => a.TimeSlot.Doctor).Include(a => a.Patient).FirstOrDefaultAsync();
+                    if (appointment != null)
+                    {
+                        var appointmentDto = _convertToDto.ConvertToAppointmentDto(appointment);
+                        timeSlotInfoResponse.Appointment = appointmentDto;
+                    }
+                }
+                return Ok(timeSlotInfoResponse);
+
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // Endpoint is authorized for Doctors and Admins ONLY
         // Meant to current authorized User (Role = Doctor) to retrieve own time slots
         // Or if Admin, fetch time slots for particular Doctor
-        [HttpGet]
+        [HttpGet("all/{doctorId}")]
         [Authorize(Roles = "Doctor, Admin")]
-        public async Task<IActionResult> GetTimeSlots([FromBody] GetDoctorTimeSlotsRequest request)
+        public async Task<IActionResult> GetTimeSlots(int doctorId, int pageNumber = 1, int pageSize = 20)
         {
             try
             {
@@ -44,38 +87,30 @@ namespace MedicalApptBookingSystem.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
                 if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
+                if (userRole == "Doctor" && int.Parse(userId) != doctorId) return Forbid("Attempting to access another doctor's time slots.");
+                 
+                // Query to fetch all time slots by this doctor
+                var query = _context.TimeSlots
+                    .Where(ts => ts.DoctorId == doctorId)
+                    .Include(ts => ts.Doctor)
+                    .OrderBy(t => t.StartTime);
 
-                int doctorId;
+                // Total count calculates how many time slots exist
+                var totalCount = await query.CountAsync();
 
-                // Assign doctorId with requested id if Admin
-                if (!string.IsNullOrEmpty(request.DoctorId))
+                // Grabs #(pageSize) of timeSlots starting at page #(pageNumber)
+                var slots = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var timeSlotDtos = _convertToDto.ConvertToListTimeSlotDto(slots);
+
+                return Ok(new
                 {
-                    if (userRole != "Admin")
-                    {
-                        return Forbid();
-                    }
-                    doctorId = int.Parse(request.DoctorId);
-                }
-
-                // Else, assign doctorId with curr auth User ONLY if User is Doctor
-                else if (userRole == "Doctor")
-                {
-                    doctorId = int.Parse(userId);
-                }
-
-                else
-                {
-                    return BadRequest("Something went wrong with this request. Try again.");
-                }
-
-                    // Fetch all time slots by this doctor
-                    var timeSlots = await _context.TimeSlots
-                        .Where(ts => ts.DoctorId == doctorId)
-                        .ToListAsync();
-
-                var timeSlotDtos = _convertToDto.ConvertToListTimeSlotDto(timeSlots);
-
-                return Ok(timeSlotDtos);
+                    timeSlotDtos,
+                    totalCount
+                });
             }
             catch (Exception ex) { 
                 return BadRequest(ex.Message);
@@ -133,9 +168,9 @@ namespace MedicalApptBookingSystem.Controllers
 
         // Endpoint is only authorized for Doctors and Admins
         // Deletes any particular Time Slot by their Id
-        [HttpDelete]
+        [HttpDelete("{id}")]
         [Authorize(Roles = "Doctor, Admin")]
-        public async Task<IActionResult> DeleteTimeSlot(DeleteTimeSlotRequest dto)
+        public async Task<IActionResult> DeleteTimeSlot(int id)
         {
             try { 
                 var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -143,13 +178,13 @@ namespace MedicalApptBookingSystem.Controllers
 
                 // Check if appointment has been booked in that time slot
                 var appointment = await _context.Appointments
-                    .FirstOrDefaultAsync (a => a.TimeSlotId == dto.TimeSlotId);
+                    .FirstOrDefaultAsync (a => a.TimeSlotId == id);
 
                 if (appointment != null) return BadRequest("Cannot delete a time slot with a booked appointment.");
 
                 // If appointment isn't booked for this time slot, fetch the time slot itself
                 var timeSlot = await _context.TimeSlots
-                    .FirstOrDefaultAsync(a => a.Id == dto.TimeSlotId);
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
                 if (timeSlot == null) return NotFound("Time slot not found.");
 
@@ -182,6 +217,30 @@ namespace MedicalApptBookingSystem.Controllers
                 return BadRequest(ex.Message);
             }
             
+        }
+
+        // Endpoint accessible by authorized Doctors and Admins
+        // Retrieves all booked time slots, alongside appointments they reference to
+        [HttpGet("booked/{doctorId}")]
+        [Authorize(Roles = "Doctor, Admin")]
+        public async Task<IActionResult> GetBookedTimeSlots(int doctorId)
+        {
+            try {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userId == null || userRole == null) return Unauthorized("Endpoint only accessible by authorized users.");
+
+                if (userRole == "Doctor" && int.Parse(userId) != doctorId) return Forbid("Attempting to access another doctor's time slots is forbidden.");
+
+                var listBookedTS = await _context.TimeSlots.Where(ts => ts.IsBooked == true).Include(ts => ts.Doctor).ToListAsync();
+                var listBookedTSDto = _convertToDto.ConvertToListTimeSlotDto(listBookedTS);
+            
+                return Ok(listBookedTSDto);
+            }
+            catch (Exception ex) {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Utility function to create a new Time Slot

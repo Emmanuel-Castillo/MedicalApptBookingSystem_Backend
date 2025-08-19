@@ -209,9 +209,11 @@ namespace MedicalApptBookingSystem.Controllers
                     return NotFound("User not found!");
                 }
 
-                // Fetch time slots created by patient (both booked and not booked)
+                // Fetch all time slots for the next seven days
                 var timeSlots = await _context.TimeSlots
                     .Where(ts => ts.DoctorId == doctorIdInt)
+                    .Where(ts => ts.StartTime >= DateTime.Now && ts.StartTime <= DateTime.Now.AddDays(7))
+                    .OrderByDescending(ts => ts.StartTime)
                     .ToListAsync();
 
                 var dto = new GetDoctorInfoResponse
