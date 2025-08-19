@@ -370,14 +370,9 @@ namespace MedicalApptBookingSystemTest
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakePatient() }
             };
 
-            // Fake Patient (Patient 1) is booked with appt id = 1
-            var request = new DeleteAppointmentRequest
-            {
-                AppointmentId = 1
-            };
-
             // Act
-            var response = await _controller.CancelAppointment(request);
+            // Fake Patient (Patient 1) is booked with appt id = 1
+            var response = await _controller.CancelAppointment(1);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(response);
@@ -393,14 +388,9 @@ namespace MedicalApptBookingSystemTest
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakePatient() }
             };
 
-            // Appt with id = 5 not included in seeded fake db
-            var request = new DeleteAppointmentRequest
-            {
-                AppointmentId = 5
-            };
-
             // Act
-            var response = await _controller.CancelAppointment(request);
+            // Appt with id = 5 not included in seeded fake db
+            var response = await _controller.CancelAppointment(5);
 
             // Assert
             var notFoundRes = Assert.IsType<NotFoundObjectResult>(response);
@@ -418,14 +408,9 @@ namespace MedicalApptBookingSystemTest
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakeAdmin() }
             };
 
-            // Fake Patient (Patient 1) is booked with appt id = 1
-            var request = new DeleteAppointmentRequest
-            {
-                AppointmentId = 1
-            };
-
             // Act
-            var response = await _controller.CancelAppointment(request);
+            // Fake Patient (Patient 1) is booked with appt id = 1
+            var response = await _controller.CancelAppointment(1);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(response);
@@ -441,14 +426,9 @@ namespace MedicalApptBookingSystemTest
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakeAdmin() }
             };
 
-            // Appt with id = 5 not included in seeded fake db
-            var request = new DeleteAppointmentRequest
-            {
-                AppointmentId = 5
-            };
-
             // Act
-            var response = await _controller.CancelAppointment(request);
+            // Appt with id = 5 not included in seeded fake db
+            var response = await _controller.CancelAppointment(5);
 
             // Assert
             var notFoundRes = Assert.IsType<NotFoundObjectResult>(response);
