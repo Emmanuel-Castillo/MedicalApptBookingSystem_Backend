@@ -230,5 +230,47 @@ namespace MedicalApptBookingSystem.Controllers
             }
         }
 
+        [HttpGet("{id}/appointments")]
+        [Authorize(Roles = "Admin, Patient")]
+        public async Task<IActionResult> GetPatientsAppointments(int id, int pageNumber = 1, int pageSize = 20)
+        {
+            try {
+                // Fetch current auth User (Patient or Admin) Id
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
+                if (userRole == "Patient" && int.Parse(userId) != id) return Forbid("Attempting to access another patient's appointments.");
+
+                // Query to fetch all appointments for patient
+                var query = _context.Appointments
+                    .Where(a => a.PatientId == id)
+                    .Include(a => a.Patient)
+                    .Include(a => a.TimeSlot)
+                    .ThenInclude(ts => ts.Doctor)
+                    .OrderBy(a => a.TimeSlot.StartTime);
+
+                // Total count calculates how many appointments patient has booked
+                var totalCount = await query.CountAsync();
+
+                // Grabs #(pageSize) of appointments starting at page #(pageNumber)
+                var appointments = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var appointmentDtos = _convertToDto.ConvertToListAppointmentDto(appointments);
+
+                return Ok(new
+                {
+                    appointmentDtos,
+                    totalCount
+                });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
