@@ -18,9 +18,8 @@ namespace MedicalApptBookingSystem.Models
         public required TimeSpan EndTime { get; set; }
 
         // Date range for scheduling purposes
-        // EndDate can be optional if the doctor is available on that day forever
         public required DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public required DateTime EndDate { get; set; }
 
 
 

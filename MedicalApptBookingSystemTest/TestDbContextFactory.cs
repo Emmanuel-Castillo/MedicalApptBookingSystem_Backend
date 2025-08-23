@@ -11,6 +11,7 @@ namespace MedicalApptBookingSystemTest
 {
     public static class TestDbContextFactory
     {
+        // Create in-memory database and seed it with data for each test case
         public static ApplicationDbContext Create()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -26,6 +27,8 @@ namespace MedicalApptBookingSystemTest
 
         private static void Seed(ApplicationDbContext context)
         {
+
+            // SEEDING USERS
             context.Users.AddRange(
                 new User
                 {
@@ -61,6 +64,7 @@ namespace MedicalApptBookingSystemTest
                 }
             );
 
+            // SEEDING TIME SLOTS
             context.TimeSlots.AddRange(
                 new TimeSlot
                 {
@@ -97,6 +101,7 @@ namespace MedicalApptBookingSystemTest
                 
                 );
 
+            // SEEDING APPOINTMENTS
             context.Appointments.AddRange(
                 new Appointment
                 {
@@ -114,6 +119,7 @@ namespace MedicalApptBookingSystemTest
                 }
                 );
 
+            // Save additions to fake db
             context.SaveChanges();
         }
     }

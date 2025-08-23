@@ -28,12 +28,12 @@ namespace MedicalApptBookingSystem.Controllers
 
         // Endpoint accessible for all Users
         // Create a new User account
+        // Hashes password using utility function below and saves it to db
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto dto)
         {
             try { 
                 // Validate dto
-                
                 if (string.IsNullOrEmpty(dto.FullName))
                     return BadRequest("Full name is required.");
 

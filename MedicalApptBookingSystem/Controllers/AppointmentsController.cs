@@ -23,10 +23,11 @@ namespace MedicalApptBookingSystem.Controllers
             _convertToDto = convertToDto;
         }
 
-        // This endpoint is authorized ONLY for Patients and Admins
-        [HttpPost("book")]
+        // This endpoint is accessible for Patients and Admins ONLY 
+        // Books a patient's appointment
+        [HttpPost]
         [Authorize(Roles = "Patient, Admin")]
-        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentsRequest request)
+        public async Task<IActionResult> BookAppointmentAsync([FromBody] BookAppointmentsRequest request)
         {
             try { 
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,59 +81,11 @@ namespace MedicalApptBookingSystem.Controllers
             
         }
 
-        // Endpoint is authorized only for Patients and Admins
-        // Retrieves a particular Patient's appointments
-        [HttpGet]
-        [Authorize(Roles = "Patient, Admin")]
-        public async Task<IActionResult> GetAppointments([FromBody] GetPatientAppointmentsRequest request)
-        {
-            try {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
-
-                int patientId;
-
-                // If patient id provided in request, check if curr auth User is Admin
-                // Assign patientId query param with requested id
-                if (!string.IsNullOrEmpty(request.PatientId))
-                {
-                    if (userRole != "Admin")
-                    {
-                        return Forbid("Attempting to retrieve a Patient's appointment, but the current auth User is not an Admin.");
-                    }
-                    patientId = int.Parse(request.PatientId);
-                }
-                // Else assign patientId with curr User id ONLY if User is Patient
-                else if (userRole == "Patient")
-                {
-                    patientId = int.Parse(userId);
-                }
-                else
-                {
-                    return BadRequest("Something went wrong with this request. Try again");
-                }
-
-                // Fetch all appointments booked by current autheticated user
-                var appointments = await _context.Appointments
-                .Where(a => a.PatientId == patientId)
-                .Include(a => a.TimeSlot)
-                .ThenInclude(t => t.Doctor)
-                .ToListAsync();
-
-                var appointmentsDto = _convertToDto.ConvertToListAppointmentDto(appointments);
-
-                return Ok(appointmentsDto); 
-            }
-            catch (Exception ex) {
-                return BadRequest(ex.Message);
-            }
-            
-        }
-
+        // This endpoint is accessible for Patients and Admins ONLY 
+        // Retrieves a patient's appointment
         [HttpGet("{id}")]
         [Authorize(Roles = "Patient, Admin")]
-        public async Task<IActionResult> GetAppointment(int id)
+        public async Task<IActionResult> GetAppointmentAsync(int id)
         {
             try
             {
@@ -166,10 +119,11 @@ namespace MedicalApptBookingSystem.Controllers
             }
         }
 
-
+        // This endpoint is accessible for Patients and Admins ONLY 
+        // Deletes a patient's appointment
         [HttpDelete("{id}")]
         [Authorize(Roles = "Patient, Admin")]
-        public async Task<IActionResult> CancelAppointment(int id)
+        public async Task<IActionResult> CancelAppointmentAsync(int id)
         {
             try {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -3,7 +3,7 @@
     public class GetDoctorInfoResponse
     {
         public required UserDto Doctor { get; set; }
-        public required List<TimeSlotDto> TimeSlots { get; set; }
+        public required List<TimeSlotDto> UpcomingTimeSlots { get; set; }
 
     }
 }

@@ -30,7 +30,10 @@ namespace MedicalApptBookingSystem.Controllers
             _context = context;
             _convertToDto = convertToDto;
         }
-
+        
+        // Endpoint is accessible for Admins and Doctors ONLY
+        // Returns specific time slot given id
+        // If is booked, also return appointment it references to
         [HttpGet("{id}")]
         [Authorize(Roles = "Doctor, Admin")]
         public async Task<IActionResult> GetTimeSlot(int id)
@@ -74,51 +77,6 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
         // Endpoint is authorized for Doctors and Admins ONLY
-        // Meant to current authorized User (Role = Doctor) to retrieve own time slots
-        // Or if Admin, fetch time slots for particular Doctor
-        [HttpGet("all/{doctorId}")]
-        [Authorize(Roles = "Doctor, Admin")]
-        public async Task<IActionResult> GetTimeSlots(int doctorId, int pageNumber = 1, int pageSize = 20)
-        {
-            try
-            {
-                // Fetch current auth User (Doctor) Id
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
-                if (userRole == "Doctor" && int.Parse(userId) != doctorId) return Forbid("Attempting to access another doctor's time slots.");
-                 
-                // Query to fetch all time slots by this doctor
-                var query = _context.TimeSlots
-                    .Where(ts => ts.DoctorId == doctorId)
-                    .Include(ts => ts.Doctor)
-                    .OrderBy(t => t.StartTime);
-
-                // Total count calculates how many time slots exist
-                var totalCount = await query.CountAsync();
-
-                // Grabs #(pageSize) of timeSlots starting at page #(pageNumber)
-                var slots = await query
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                var timeSlotDtos = _convertToDto.ConvertToListTimeSlotDto(slots);
-
-                return Ok(new
-                {
-                    timeSlotDtos,
-                    totalCount
-                });
-            }
-            catch (Exception ex) { 
-                return BadRequest(ex.Message);
-            }
-            
-        }
-
-        // Endpoint is authorized for Doctors and Admins
         // Allows current authorized User (Role = Doctor) to create their own time slot
         // Or if admin, create a time slot for a given Doctor
         [HttpPost]
@@ -217,30 +175,6 @@ namespace MedicalApptBookingSystem.Controllers
                 return BadRequest(ex.Message);
             }
             
-        }
-
-        // Endpoint accessible by authorized Doctors and Admins
-        // Retrieves all booked time slots, alongside appointments they reference to
-        [HttpGet("booked/{doctorId}")]
-        [Authorize(Roles = "Doctor, Admin")]
-        public async Task<IActionResult> GetBookedTimeSlots(int doctorId)
-        {
-            try {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-                if (userId == null || userRole == null) return Unauthorized("Endpoint only accessible by authorized users.");
-
-                if (userRole == "Doctor" && int.Parse(userId) != doctorId) return Forbid("Attempting to access another doctor's time slots is forbidden.");
-
-                var listBookedTS = await _context.TimeSlots.Where(ts => ts.IsBooked == true).Include(ts => ts.Doctor).ToListAsync();
-                var listBookedTSDto = _convertToDto.ConvertToListTimeSlotDto(listBookedTS);
-            
-                return Ok(listBookedTSDto);
-            }
-            catch (Exception ex) {
-                return BadRequest(ex.Message);
-            }
         }
 
         // Utility function to create a new Time Slot

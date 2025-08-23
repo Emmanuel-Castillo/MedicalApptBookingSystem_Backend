@@ -3,39 +3,28 @@ using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 
-namespace MedicalApptBookingSystemTest
+namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
 {
-    public class AuthControllerTests
+    public class RegisterTests
     {
 
         private readonly ApplicationDbContext _context;
         private readonly Mock<IAuthService> _mockAuthService;
         private readonly AuthController _controller;
 
-        public AuthControllerTests()
+        public RegisterTests()
         {
             _context = TestDbContextFactory.Create();
-
-            // Set up the mock AuthService
             _mockAuthService = new Mock<IAuthService>();
-
-            // Mock the token so we know what to expect
-            // Argument we pass to GenerateToken is a Mock of type User
-            // So we set up GenerateToken with a mock user (which can be any user), and set it to return a token string
-            _mockAuthService.Setup(s => s.GenerateToken(It.IsAny<User>()))
-                .Returns("fake-jwt-token");
-
-            // Inject the mock AuthService into controller
             _controller = new AuthController(_context, _mockAuthService.Object);
         }
 
         [Fact]
         public async Task Register_WithValidUser_ReturnsOk()
         {
-            // Arrange
+            // Arrange -- Set up Dto with valid credentials
             var dto = new UserRegisterDto
             {
                 FullName = "Patient999",
@@ -44,10 +33,10 @@ namespace MedicalApptBookingSystemTest
                 Role = "Patient"
             };
 
-            // Act
+            // Act -- Pass Dto to controller
             var result = await _controller.Register(dto);
 
-            // Assert 
+            // Assert -- Returns OkResult
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal("Registration successful", okResult.Value);
         }
@@ -55,7 +44,7 @@ namespace MedicalApptBookingSystemTest
         [Fact]
         public async Task Register_WithInvalidFullName_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange -- Set up Dto using invalid full name
             var registerDto = new UserRegisterDto
             {
                 FullName = string.Empty,
@@ -64,10 +53,10 @@ namespace MedicalApptBookingSystemTest
                 Role = string.Empty
             };
 
-            // Act
+            // Act -- Pass Dto to controller
             var result = await _controller.Register(registerDto);
 
-            // Assert
+            // Assert -- Returns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Full name is required.", badRequestRes.Value);
 
@@ -76,7 +65,7 @@ namespace MedicalApptBookingSystemTest
         [Fact]
         public async Task Register_WithInvalidEmail_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange -- Set up Dto using invalid email
             var registerDto = new UserRegisterDto
             {
                 FullName = "John Doe",
@@ -85,10 +74,10 @@ namespace MedicalApptBookingSystemTest
                 Role = string.Empty
             };
 
-            // Act
+            // Act -- Pass Dto to controller
             var result = await _controller.Register(registerDto);
 
-            // Assert
+            // Assert -- Returns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Invalid email format", badRequestRes.Value);
 
@@ -97,7 +86,7 @@ namespace MedicalApptBookingSystemTest
         [Fact]
         public async Task Register_WithInvalidPassword_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange -- Set up Dto with invalid password
             var registerDto = new UserRegisterDto
             {
                 FullName = "John Doe",
@@ -106,10 +95,10 @@ namespace MedicalApptBookingSystemTest
                 Role = string.Empty
             };
 
-            // Act
+            // Act -- Pass Dto to controller
             var result = await _controller.Register(registerDto);
 
-            // Assert
+            // Assert -- Returns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Password must be at least 6 characters long.", badRequestRes.Value);
 
@@ -118,7 +107,7 @@ namespace MedicalApptBookingSystemTest
         [Fact]
         public async Task Register_WithInvalidRole_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange -- Set up Dto using invalid Role
             var registerDto = new UserRegisterDto
             {
                 FullName = "John Doe",
@@ -127,10 +116,10 @@ namespace MedicalApptBookingSystemTest
                 Role = "MadeUpRole"
             };
 
-            // Act
+            // Act -- Pass Dto to controller
             var result = await _controller.Register(registerDto);
 
-            // Assert
+            // Assert -- Retuns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Invalid role selected", badRequestRes.Value);
 
@@ -139,7 +128,7 @@ namespace MedicalApptBookingSystemTest
         [Fact]
         public async Task Register_WithExistingUser_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange -- Register a new User
             var registerDto = new UserRegisterDto
             {
                 FullName = "John Doe",
@@ -149,77 +138,15 @@ namespace MedicalApptBookingSystemTest
             };
             await _controller.Register(registerDto);
 
-            // Act
+            // Act -- Register using the same credentials
             var result = await _controller.Register(registerDto);
 
-            // Assert first user's registration
+            // Assert -- Must return BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Email already registered.", badRequestRes.Value);
 
         }
 
-        [Fact]
-        public async Task Login_WithValidUser_ReturnsOk()
-        {
-            // Arrange
-            // Register a new user
-            var registerDto = new UserRegisterDto
-            {
-                FullName = "Patient999",
-                Email = "patient999@example.com",
-                Password = "patient999",
-                Role = "Patient"
-            };
-
-            var registerResult = await _controller.Register(registerDto);
-
-            // Log user in 
-            var loginDto = new UserLoginDto
-            {
-                Email = "patient999@example.com",
-                Password = "patient999"
-            };
-
-            // Act
-            var loginResult = await _controller.Login(loginDto);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(loginResult);
-
-            var json = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
-            Assert.Contains("fake-jwt-token", json);
-
-        }
-
-        [Fact]
-        public async Task Login_WithInvalidUser_ReturnsUnauthorized()
-        {
-            // Arrange
-            // Register a new user
-            var registerDto = new UserRegisterDto
-            {
-                FullName = "Patient1",
-                Email = "patient1@example.com",
-                Password = "patient1",
-                Role = "Patient"
-            };
-
-            var registerResult = await _controller.Register(registerDto);
-
-            // Log user in with invalid credentails
-            var loginDto = new UserLoginDto
-            {
-                Email = "patient1@example.com",
-                Password = "doctor1"
-            };
-
-            // Act
-            var loginResult = await _controller.Login(loginDto);
-
-            // Assert
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(loginResult);
-            Assert.Equal("Invalid credentials.", unauthorizedResult.Value);
-
-        }
+        
     }
 }
