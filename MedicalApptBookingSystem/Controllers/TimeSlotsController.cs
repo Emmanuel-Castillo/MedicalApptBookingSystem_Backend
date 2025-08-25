@@ -157,19 +157,31 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
         // Endpoint accessible by any authorized Users
-        // Retrives ALL AVAILABLE time slots
+        // Retrives ALL AVAILABLE time slots. Pagination implemented
+        // Must grab time slots whose startTime is >= now
         [HttpGet("available")]
         [Authorize]
-        public async Task<IActionResult> GetAvailableTimeSlots()
+        public async Task<IActionResult> GetAvailableTimeSlots(int pageNumber = 1, int pageSize = 10)
         {
             try {
-                var availableTimeSlots = await _context.TimeSlots
-                .Include(t => t.Doctor)
-                .Where(t => !t.IsBooked)
-                .ToListAsync();
+
+                var query = _context.TimeSlots
+                    .Include(t => t.Doctor)
+                    .Where(ts => ts.StartTime >= DateTime.Now)
+                    .Where(t => !t.IsBooked)
+                    .OrderBy(t => t.StartTime);
+
+                // Grab total count
+                var totalCount = await query.CountAsync();
+
+                // Grab #(pageSize) of available time slots starting at page #(pageNumber)
+                var availableTimeSlots = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
 
                 var availableTimeSlotDtos = _convertToDto.ConvertToListTimeSlotDto(availableTimeSlots);
-                return Ok(availableTimeSlotDtos); 
+                return Ok(new {availableTimeSlotDtos, totalCount}); 
             }
             catch (Exception ex) {
                 return BadRequest(ex.Message);

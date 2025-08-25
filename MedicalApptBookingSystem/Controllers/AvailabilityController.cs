@@ -22,6 +22,10 @@ namespace MedicalApptBookingSystem.Controllers
             _context = context;
         }
 
+        // Endpoint is accessible to Admins and Doctors ONLY
+        // Given the request, set the doctor's availability and generate time slots 
+        // And for each day of the week provided in the request, create a new Availability row in the db
+        // And between StartTime and EndTime, generate 1-hr time slots for patients to book appointments with
         [HttpPost]
         [Authorize(Roles = "Admin, Doctor")]
         public async Task<IActionResult> SetDoctorAvailability([FromBody] SetDoctorAvailRequest request)
@@ -32,6 +36,28 @@ namespace MedicalApptBookingSystem.Controllers
 
                 if (userId == null || userRole == null) return Forbid("Unauthorized access to this endpoint is prohibited!");
                 if (userRole == "Doctor" && int.Parse(userId) != request.DoctorId) return Forbid("Doctor cannot set another doctor's availability.");
+
+                // Verify that request doesn't overlap w/ existing availability
+                foreach (var day in request.DaysOfWeek)
+                {
+                    var overlapAvail = await _context.DoctorAvailability
+                        .Where(a => a.DoctorId == request.DoctorId
+                            && a.DayOfWeek == day
+                            // date range overlap
+                            && a.StartDate <= request.EndDate
+                            && a.EndDate >= request.StartDate
+                            // time range overlap
+                            && a.StartTime < request.EndTime
+                            && a.EndTime > request.StartTime)
+                        .FirstOrDefaultAsync();
+
+                    if (overlapAvail != null)
+                    {
+                        return BadRequest($"Overlap detected for {day} between " +
+                            $"{overlapAvail.StartTime} - {overlapAvail.EndTime} " +
+                            $"within {overlapAvail.StartDate:d} to {overlapAvail.EndDate:d}.");
+                    }
+                }
 
                 // For each day in the request list
                 foreach (var day in request.DaysOfWeek)
@@ -50,8 +76,8 @@ namespace MedicalApptBookingSystem.Controllers
                     _context.DoctorAvailability.Add(docAvail);
                     await _context.SaveChangesAsync();
 
-                    // Generate time slots once availability has been saved to db, up to one month in advance.
-                    var slots = GenerateSlots(docAvail, DateTime.UtcNow.AddMonths(1));
+                    // Generate time slots once availability has been saved to db, from the availability StartDate to EndDate
+                    var slots = GenerateSlots(docAvail);
                     _context.TimeSlots.AddRange(slots);
                     await _context.SaveChangesAsync();
                 }
@@ -61,7 +87,7 @@ namespace MedicalApptBookingSystem.Controllers
             }
         }
 
-        private IEnumerable<TimeSlot> GenerateSlots(DoctorAvailability availability, DateTime untilDate)  
+        private IEnumerable<TimeSlot> GenerateSlots(DoctorAvailability availability)  
         {
             var slots = new List<TimeSlot>();
 
@@ -69,7 +95,7 @@ namespace MedicalApptBookingSystem.Controllers
             var currentDate = availability.StartDate;
 
             // For every day until the untilDate
-            while (currentDate < untilDate)
+            while (currentDate < availability.EndDate)
             {
                 // Create time slots ONLY for DayOfWeek specified in the availability obj
                 if (currentDate.DayOfWeek == availability.DayOfWeek)
