@@ -151,5 +151,39 @@ namespace MedicalApptBookingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        // This endpoint is accessible for Doctors and Admins ONLY
+        // Adds a note to the request appointment given appt id
+        [HttpPost("{id}/notes")]
+        [Authorize(Roles = "Doctor, Admin")]
+        public async Task<IActionResult> AddNotesToAppointment(int id, [FromBody] UpdateApptNotesRequest request)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userId == null || userRole == null) return BadRequest("Attempting to access authorized endpoint.");
+
+                // Find appointment in db
+                var appointment = await _context.Appointments
+                    .Include(a => a.TimeSlot)
+                    .FirstOrDefaultAsync(a => a.Id == id);
+
+                if (appointment == null) return NotFound("Appointment not found.");
+
+                // IF current User is Doctor, validate if appt and doctor have matching doctor ids
+                if (userRole == "Doctor" && appointment.TimeSlot.DoctorId != int.Parse(userId))
+                    return Forbid("You are not authorized to add notes to this appointment.");
+
+                appointment.Notes = request.UpdatedNotes;
+                await _context.SaveChangesAsync();
+
+                return Ok("Notes added successfully.");
+            } catch (Exception ex) 
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
