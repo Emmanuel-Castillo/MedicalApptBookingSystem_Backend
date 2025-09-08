@@ -45,6 +45,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ConvertToDto>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Adding CORS (Cross-Origin Resource Sharing) policy
 // By default, browsers restrict requests between different origins
@@ -57,6 +58,7 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "https://localhost:3000",
                 "https://medical-appt-booking-system-fronten.vercel.app"
             )

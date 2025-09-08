@@ -23,16 +23,20 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
         // Endpoint accessible for Admins ONLY
-        // Retrieve ALL Doctors
+        // Retrieve ALL doctor profiles
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllDoctorsAsync()
         {
             try
             {
-                var users = await _context.Users.Where(u => u.Role == UserRole.Doctor).ToListAsync();
-                var usersDto = _convertToDto.ConvertToListUserDto(users);
-                return Ok(usersDto);
+                var doctors = await _context.DoctorProfiles.Include(dp => dp.User).ToListAsync();
+                var listDoctorDtos = _convertToDto.ConvertToListDoctorDto(doctors);
+                return Ok(listDoctorDtos);
+
+                //var users = await _context.Users.Where(u => u.Role == UserRole.Doctor).ToListAsync();
+                //var usersDto = _convertToDto.ConvertToListUserDto(users);
+                //return Ok(usersDto);
             }
             catch (Exception ex)
             {
@@ -41,11 +45,10 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
         // Endpoint accessible for Admins and Doctors ONLY
-        // Retrieves specific Doctor information for their home page
-        // Returns their User information, and a list of BOOKED time slots from now through the next two weeks
-        [HttpGet("{id}")]
+        // Retrieves doctor's profile and booked time slots for the next two weeks
+        [HttpGet("{doctorId}")]
         [Authorize(Roles = "Admin, Doctor")]
-        public async Task<IActionResult> GetDoctorAsync(int id)
+        public async Task<IActionResult> GetDoctorAsync(int doctorId)
         {
             try
             {
@@ -55,30 +58,36 @@ namespace MedicalApptBookingSystem.Controllers
                 if (currentUserId == null || currentUserRole == null)
                     return BadRequest("User Id Not Defined!");
 
-                if (currentUserRole == "Doctor" && int.Parse(currentUserId) != id)
+                if (currentUserRole == "Doctor" && int.Parse(currentUserId) != doctorId)
                     return Forbid("Trying to access another doctor's information.");
 
-                // Fetch doctor from db
-                var doctor = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+                // Fetch doctor's profile from db
+                var doctor = await _context.DoctorProfiles.Include(dp => dp.User).FirstOrDefaultAsync(dp => dp.UserId == doctorId);
                 if (doctor == null) return NotFound("User not found!");
 
                 // End date limit for timeSlots acquired
-                var todayTwoWeeksFromNow = DateTime.Today.AddDays(14);
-                int delta = DayOfWeek.Monday - todayTwoWeeksFromNow.DayOfWeek;
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var todayTwoWeeksFromNow = today.AddDays(14);
+                int delta = DayOfWeek.Sunday - todayTwoWeeksFromNow.DayOfWeek;
                 var twoWeeksEndDate = todayTwoWeeksFromNow.AddDays(delta);
 
                 // Fetch all time slots from now through the next two weeks
                 // Order them by earliest date
+                //var ts = doctor.TimeSlots
+                //    .Where(ts => ts.IsBooked && ts.Date >= DateOnly.FromDateTime(DateTime.Now) && ts.Date <= twoWeeksEndDate)
+                //    .OrderByDescending(ts => ts.StartTime)
+                //    .ToList();
+
                 var timeSlots = await _context.TimeSlots
-                    .Where(ts => ts.DoctorId == id && ts.IsBooked)
-                    .Where(ts => ts.StartTime >= DateTime.Now && ts.StartTime <= twoWeeksEndDate)
+                    .Where(ts => ts.DoctorId == doctorId && ts.IsBooked)
+                    .Where(ts => ts.Date >= DateOnly.FromDateTime(DateTime.Now) && ts.Date <= twoWeeksEndDate)
                     .OrderByDescending(ts => ts.StartTime)
                     .ToListAsync();
 
                 var dto = new GetDoctorInfoResponse
                 {
-                    Doctor = _convertToDto.ConvertToUserDto(doctor),
-                    UpcomingTimeSlots = _convertToDto.ConvertToListTimeSlotDto(timeSlots)
+                    DoctorProfile = _convertToDto.ConvertToDoctorDto(doctor),
+                    BookedTimeSlotsNextTwoWeeks = _convertToDto.ConvertToListTimeSlotDto(timeSlots)
                 };
 
                 return Ok(dto);
@@ -105,15 +114,11 @@ namespace MedicalApptBookingSystem.Controllers
                 if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
                 if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Attempting to access another doctor's time slots.");
 
-                // Check if doctor w/ id exists
-                var doctor = await _context.Users.Where(u => u.Id == id && u.Role == UserRole.Doctor).FirstOrDefaultAsync();
-                if (doctor == null) return NotFound("Doctor not found!");
-
                 // Query to fetch all time slots by this doctor
                 var query = _context.TimeSlots
                     .Where(ts => ts.DoctorId == id)
                     .Include(ts => ts.Doctor)
-                    .OrderBy(t => t.StartTime);
+                    .OrderBy(t => t.Date);
 
                 // Total count calculates how many time slots exist
                 var totalCount = await query.CountAsync();
@@ -187,10 +192,10 @@ namespace MedicalApptBookingSystem.Controllers
                 if (userId == null || userRole == null) return Forbid("Unauthorized access to this endpoint is prohibited!");
                 if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Doctor cannot access another doctor's availability.");
 
-                var today = DateTime.Today;
+                var today = DateOnly.FromDateTime(DateTime.Today);
                 int delta = DayOfWeek.Monday - today.DayOfWeek;
                 var weekStart = today.AddDays(delta);
-                var weekEnd = weekStart.AddDays(7).AddSeconds(-1);
+                var weekEnd = weekStart.AddDays(7);
                 var availabilities = await _context.DoctorAvailability
                     .Where(d => d.DoctorId == id &&
                         d.StartDate <= weekEnd &&

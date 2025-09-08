@@ -2,6 +2,7 @@
 using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.Models;
+using MedicalApptBookingSystem.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -20,6 +21,7 @@ namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
 
             // Set up the mock AuthService
             _mockAuthService = new Mock<IAuthService>();
+            var _emailService = new Mock<IEmailService>();
 
             // Mock the token so we know what to expect
             // Argument we pass to GenerateToken is a Mock of type User
@@ -27,8 +29,9 @@ namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
             _mockAuthService.Setup(s => s.GenerateToken(It.IsAny<User>()))
                 .Returns("fake-jwt-token");
 
+
             // Inject the mock AuthService into controller
-            _controller = new AuthController(_context, _mockAuthService.Object);
+            _controller = new AuthController(_context, _mockAuthService.Object, _emailService.Object);
         }
         
         [Fact]

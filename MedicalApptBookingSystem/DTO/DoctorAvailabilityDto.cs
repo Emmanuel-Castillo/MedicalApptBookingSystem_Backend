@@ -7,14 +7,11 @@ namespace MedicalApptBookingSystem.DTO
     {
         public int Id { get; set; }
 
-        public required UserDto Doctor { get; set; }
-
+        public required DoctorDto Doctor { get; set; }
         public required string DayOfWeek { get; set; }
-
-        public required TimeSpan StartTime { get; set; }
-        public required TimeSpan EndTime { get; set; }
-
-        public required DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public required TimeOnly StartTime { get; set; }
+        public required TimeOnly EndTime { get; set; }
+        public required DateOnly StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
     }
 }

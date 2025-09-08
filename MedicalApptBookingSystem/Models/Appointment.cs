@@ -12,8 +12,11 @@ namespace MedicalApptBookingSystem.Models
 
         [ForeignKey("Patient")]
         public required int PatientId { get; set; }
-        public User Patient { get; set; } = null!;
+        public Patient Patient { get; set; } = null!;
 
+        [ForeignKey("Doctor")]
+        public required int DoctorId { get; set; }
+        public Doctor Doctor { get; set; } = null!;
         public string? Notes { get; set; }
     }
 }

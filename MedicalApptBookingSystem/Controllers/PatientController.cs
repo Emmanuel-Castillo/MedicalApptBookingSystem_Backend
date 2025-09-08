@@ -23,15 +23,15 @@ namespace MedicalApptBookingSystem.Controllers
         }
 
         // Endpoint authorized for Admins ONLY
-        // Retrieve ONLY ALL patients
+        // Retrieve ONLY ALL patients profiles
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllPatientsAsync()
         {
             try
             {
-                var users = await _context.Users.Where(u => u.Role == UserRole.Patient).ToListAsync();
-                var usersDto = _convertToDto.ConvertToListUserDto(users);
+                var patients = await _context.PatientProfiles.Include(pp => pp.User).ToListAsync();
+                var usersDto = _convertToDto.ConvertToListPatientDto(patients);
                 return Ok(usersDto);
             }
             catch (Exception ex)
@@ -58,19 +58,20 @@ namespace MedicalApptBookingSystem.Controllers
                     return Forbid("Trying to access another patient's information.");
 
                 // Finally, fetch patient from db
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-                if (user == null) return NotFound("User not found!");
+                var patient = await _context.PatientProfiles.Include(pp => pp.User).FirstOrDefaultAsync(pp => pp.UserId == id);
+                if (patient == null) return NotFound("User not found!");
 
                 // Fetch appts booked by patient for the current week
                 // Ordered by StartTime of the appt
-                var today = DateTime.Today;
+                var today = DateOnly.FromDateTime(DateTime.Today);
                 int delta = DayOfWeek.Monday - today.DayOfWeek;
                 var weekStart = today.AddDays(delta);
-                var weekEnd = weekStart.AddDays(7).AddSeconds(-1);
+                var weekEnd = weekStart.AddDays(7);
+
                 var appointments = await _context.Appointments
                 .Where(a => a.PatientId == id && 
-                        a.TimeSlot.StartTime <= weekEnd &&
-                        a.TimeSlot.EndTime >= weekStart)
+                        a.TimeSlot.Date <= weekEnd &&
+                        a.TimeSlot.Date >= weekStart)
                 .Include(a => a.TimeSlot)
                 .ThenInclude(t => t.Doctor)
                 .OrderBy(a => a.TimeSlot.StartTime)
@@ -78,7 +79,7 @@ namespace MedicalApptBookingSystem.Controllers
 
                 var dto = new GetPatientInfoResponse
                 {
-                    Patient = _convertToDto.ConvertToUserDto(user),
+                    PatientProfile = _convertToDto.ConvertToPatientDto(patient),
                     AppointmentsThisWeek = _convertToDto.ConvertToListAppointmentDto(appointments)
                 };
 

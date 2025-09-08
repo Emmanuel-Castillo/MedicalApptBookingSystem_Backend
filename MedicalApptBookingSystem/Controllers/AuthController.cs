@@ -1,6 +1,7 @@
 ﻿ 
 using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
+using MedicalApptBookingSystem.DTO.Requests;
 using MedicalApptBookingSystem.Models;
 using MedicalApptBookingSystem.Services;
 using MedicalApptBookingSystemTest;
@@ -19,11 +20,13 @@ namespace MedicalApptBookingSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IAuthService _authService;
+        private readonly IEmailService _emailService;
 
-        public AuthController(ApplicationDbContext context, IAuthService authService)
+        public AuthController(ApplicationDbContext context, IAuthService authService, IEmailService emailService)
         {
             _context = context;
             _authService = authService;
+            _emailService = emailService;
         }
 
         // Endpoint accessible for all Users
@@ -92,6 +95,63 @@ namespace MedicalApptBookingSystem.Controllers
                 return BadRequest(ex.Message);
             }
             
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+                if (user == null) return NotFound("User not found.");
+
+                var resetToken = GenerateUrlSafeToken();
+                user.PasswordResetToken = resetToken;
+                user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+
+                await _context.SaveChangesAsync();
+
+                await _emailService.SendEmailAsync(user.Email,
+                    "Reset your password",
+                    $"Click here to reset: http://localhost:3000/reset-password?token={resetToken}");
+
+                return Ok("If that email exists, we've sent a reset link");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest dto)
+        {
+            try {
+                var user = await _context.Users.FirstOrDefaultAsync(u =>
+                    u.PasswordResetToken == dto.Token && u.PasswordResetTokenExpiry > DateTime.UtcNow
+                );
+
+                if (user == null) return BadRequest("Invalid or expired token.");
+
+                user.PasswordHash = HashPassword(dto.NewPassword);
+                user.PasswordResetToken = null;
+                user.PasswordResetTokenExpiry = null;
+
+                await _context.SaveChangesAsync();
+
+                return Ok("Password reset successful."); 
+            } catch (Exception ex) {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        private string GenerateUrlSafeToken()
+        {
+            var bytes = Guid.NewGuid().ToByteArray();
+            return Convert.ToBase64String(bytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .Replace("=", "");
         }
 
         private string HashPassword(string password) {

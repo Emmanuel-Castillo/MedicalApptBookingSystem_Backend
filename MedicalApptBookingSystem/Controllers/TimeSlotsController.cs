@@ -91,7 +91,7 @@ namespace MedicalApptBookingSystem.Controllers
                 // through the middleware, the claim "NameIdentifier" gets extracted which contains the user's Id
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                if (userId == null) return Unauthorized("Not authorized to use this endpoint.");
+                if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
 
                 int doctorId;
 
@@ -158,7 +158,7 @@ namespace MedicalApptBookingSystem.Controllers
 
         // Endpoint accessible by any authorized Users
         // Retrives ALL AVAILABLE time slots. Pagination implemented
-        // Must grab time slots whose startTime is >= now
+        // Must grab time slots whose Date on or after Today
         [HttpGet("available")]
         [Authorize]
         public async Task<IActionResult> GetAvailableTimeSlots(int pageNumber = 1, int pageSize = 10)
@@ -167,7 +167,7 @@ namespace MedicalApptBookingSystem.Controllers
 
                 var query = _context.TimeSlots
                     .Include(t => t.Doctor)
-                    .Where(ts => ts.StartTime >= DateTime.Now)
+                    .Where(ts => ts.Date >= DateOnly.FromDateTime(DateTime.Today))
                     .Where(t => !t.IsBooked)
                     .OrderBy(t => t.StartTime);
 
@@ -197,6 +197,7 @@ namespace MedicalApptBookingSystem.Controllers
             try { // Check for conflicts with existing slots for this particular Doctor
             bool conflict = await _context.TimeSlots.AnyAsync(slot =>
                 slot.DoctorId == doctorId &&
+                slot.Date == dto.Date &&
                 slot.StartTime < dto.EndTime &&
                 dto.StartTime < slot.EndTime
             );
@@ -207,6 +208,7 @@ namespace MedicalApptBookingSystem.Controllers
             var timeSlot = new TimeSlot
             {
                 DoctorId = doctorId,
+                Date = dto.Date,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 IsBooked = false

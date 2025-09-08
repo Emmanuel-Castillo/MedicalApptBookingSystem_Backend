@@ -2,6 +2,7 @@
 using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.Models;
+using MedicalApptBookingSystem.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -18,7 +19,8 @@ namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
         {
             _context = TestDbContextFactory.Create();
             _mockAuthService = new Mock<IAuthService>();
-            _controller = new AuthController(_context, _mockAuthService.Object);
+            var _emailService = new Mock<IEmailService>();
+            _controller = new AuthController(_context, _mockAuthService.Object, _emailService.Object);
         }
 
         [Fact]

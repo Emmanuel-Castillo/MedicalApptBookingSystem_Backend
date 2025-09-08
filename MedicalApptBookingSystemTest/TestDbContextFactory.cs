@@ -69,32 +69,36 @@ namespace MedicalApptBookingSystemTest
                 new TimeSlot
                 {
                     Id = 1,
-                    StartTime = DateTime.Now,
-                    EndTime = DateTime.Now.AddHours(1),
+                    Date = DateOnly.FromDateTime(DateTime.Today),
+                    StartTime = TimeOnly.FromDateTime(DateTime.Now),
+                    EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
                     DoctorId = 2,
                     IsBooked = true,
                 },
                 new TimeSlot
                 {
                     Id = 2,
-                    StartTime = DateTime.Now.AddHours(1),
-                    EndTime = DateTime.Now.AddHours(2),
+                    Date = DateOnly.FromDateTime(DateTime.Today),
+                    StartTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
+                    EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)),
                     DoctorId = 2,
                     IsBooked = true,
                 },
                 new TimeSlot
                 {
                     Id = 3,
-                    StartTime = DateTime.Now,
-                    EndTime = DateTime.Now.AddHours(1),
+                    Date = DateOnly.FromDateTime(DateTime.Today),
+                    StartTime = TimeOnly.FromDateTime(DateTime.Now),
+                    EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
                     DoctorId = 4,
                     IsBooked = false,
                 },
                 new TimeSlot
                 {
                     Id = 4,
-                    StartTime = DateTime.Now.AddHours(1),
-                    EndTime = DateTime.Now.AddHours(2),
+                    Date = DateOnly.FromDateTime(DateTime.Today),
+                    StartTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
+                    EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)),
                     DoctorId = 4,
                     IsBooked = false,
                 }
@@ -107,6 +111,7 @@ namespace MedicalApptBookingSystemTest
                 {
                     Id = 1,
                     PatientId = 1,
+                    DoctorId = 2,
                     TimeSlotId = 1,
                     Notes = null
                 },
@@ -114,6 +119,7 @@ namespace MedicalApptBookingSystemTest
                 {
                     Id = 2,
                     PatientId = 3,
+                    DoctorId = 2,
                     TimeSlotId = 2,
                     Notes = null
                 }

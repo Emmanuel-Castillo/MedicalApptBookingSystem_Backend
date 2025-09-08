@@ -6,12 +6,12 @@
 
         public required List<DayOfWeek> DaysOfWeek { get; set; }
 
-        public required TimeSpan StartTime { get; set; }
+        public required TimeOnly StartTime { get; set; }
 
-        public required TimeSpan EndTime { get; set; }
+        public required TimeOnly EndTime { get; set; }
 
-        public required DateTime StartDate { get; set; }
+        public required DateOnly StartDate { get; set; }
 
-        public required DateTime EndDate { get; set; }
+        public required DateOnly EndDate { get; set; }
     }
 }

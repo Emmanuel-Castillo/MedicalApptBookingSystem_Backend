@@ -14,5 +14,10 @@
         public required string Email { get; set; } = string.Empty;
         public required string PasswordHash { get; set; } = string.Empty;
         public required UserRole Role { get; set; }
+
+
+        // Password reset
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
     }
 }

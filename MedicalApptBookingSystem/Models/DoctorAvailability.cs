@@ -8,18 +8,18 @@ namespace MedicalApptBookingSystem.Models
 
         [ForeignKey("Doctor")]
         public int DoctorId { get; set; }
-        public User Doctor { get; set; } = null!;
+        public Doctor Doctor { get; set; } = null!;
 
         // Day of the week
         public required DayOfWeek DayOfWeek { get; set; }
 
         // Time range doctor is available on that day
-        public required TimeSpan StartTime { get; set; }
-        public required TimeSpan EndTime { get; set; }
+        public required TimeOnly StartTime { get; set; }
+        public required TimeOnly EndTime { get; set; }
 
         // Date range for scheduling purposes
-        public required DateTime StartDate { get; set; }
-        public required DateTime EndDate { get; set; }
+        public required DateOnly StartDate { get; set; }
+        public required DateOnly EndDate { get; set; }
 
 
 

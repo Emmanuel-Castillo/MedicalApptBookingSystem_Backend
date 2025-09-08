@@ -2,8 +2,8 @@
 {
     public class GetDoctorInfoResponse
     {
-        public required UserDto Doctor { get; set; }
-        public required List<TimeSlotDto> UpcomingTimeSlots { get; set; }
+        public required DoctorDto DoctorProfile { get; set; }
+        public required List<TimeSlotDto> BookedTimeSlotsNextTwoWeeks { get; set; }
 
     }
 }

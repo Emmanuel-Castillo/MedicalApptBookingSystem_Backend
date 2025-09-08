@@ -95,7 +95,7 @@ namespace MedicalApptBookingSystem.Controllers
             var currentDate = availability.StartDate;
 
             // For every day until the untilDate
-            while (currentDate < availability.EndDate)
+            while (currentDate <= availability.EndDate)
             {
                 // Create time slots ONLY for DayOfWeek specified in the availability obj
                 if (currentDate.DayOfWeek == availability.DayOfWeek)
@@ -108,8 +108,9 @@ namespace MedicalApptBookingSystem.Controllers
                         slots.Add(new TimeSlot
                         {
                             DoctorId = availability.DoctorId,
-                            StartTime = currentDate.Add(currSlotTime),
-                            EndTime = currentDate.Add(currSlotTime).Add(TimeSpan.FromHours(1)),
+                            Date = currentDate,
+                            StartTime = currSlotTime,
+                            EndTime = currSlotTime.Add(TimeSpan.FromHours(1)),
                             IsBooked = false,
                         });
 

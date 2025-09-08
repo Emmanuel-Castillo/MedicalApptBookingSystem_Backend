@@ -23,6 +23,39 @@ namespace MedicalApptBookingSystem.Controllers
             _convertToDto = convertToDto;
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAppointmentsAsync(int pageNumber = 1, int pageSize = 15)
+        {
+            try {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
+
+                var query = _context.Appointments
+                    .Include(a => a.Patient)
+                    .Include(a => a.TimeSlot)
+                    .ThenInclude(ts => ts.Doctor);
+                var totalCount = await query.CountAsync();
+
+                var appointments = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                var listAppointmentDto = _convertToDto.ConvertToListAppointmentDto(appointments);
+
+                return Ok(new
+                {
+                    listAppointmentDto,
+                    totalCount
+                });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // This endpoint is accessible for Patients and Admins ONLY 
         // Books a patient's appointment
         [HttpPost]
@@ -63,7 +96,8 @@ namespace MedicalApptBookingSystem.Controllers
                 var appointment = new Appointment
                 {
                     TimeSlotId = timeSlot.Id,
-                    PatientId = patientId
+                    PatientId = patientId,
+                    DoctorId = timeSlot.DoctorId
                 };
 
                 // Set requested time slot as booked

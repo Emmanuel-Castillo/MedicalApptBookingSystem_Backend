@@ -12,7 +12,9 @@ namespace MedicalApptBookingSystem.Util
             {
                 Id = a.Id,
                 PatientId = a.PatientId,
-                Patient = this.ConvertToUserDto(a.Patient),
+                Patient = this.ConvertToPatientDto(a.Patient),
+                DoctorId = a.DoctorId,
+                Doctor = this.ConvertToDoctorDto(a.Doctor),
                 TimeSlotId = a.TimeSlot.Id,
                 TimeSlot = this.ConvertToTimeSlotDto(a.TimeSlot),
                 Notes = a.Notes
@@ -45,10 +47,11 @@ namespace MedicalApptBookingSystem.Util
             var timeSlotDto = new TimeSlotDto
             {
                 Id = t.Id,
+                Date = t.Date,
                 StartTime = t.StartTime,
                 EndTime = t.EndTime,
                 IsBooked = t.IsBooked,
-                Doctor = this.ConvertToUserDto(t.Doctor)
+                Doctor = this.ConvertToDoctorDto(t.Doctor)
             };
 
             return timeSlotDto;
@@ -79,7 +82,7 @@ namespace MedicalApptBookingSystem.Util
             {
                 Id = a.Id,
                 DayOfWeek = a.DayOfWeek.ToString(),
-                Doctor = this.ConvertToUserDto(a.Doctor),
+                Doctor = this.ConvertToDoctorDto(a.Doctor),
                 StartTime = a.StartTime,
                 EndTime = a.EndTime,
                 StartDate = a.StartDate,
@@ -87,6 +90,41 @@ namespace MedicalApptBookingSystem.Util
             };
 
             return availDto;
+        }
+
+        public DoctorDto ConvertToDoctorDto(Doctor dp)
+        {
+            var doctorProfileDto = new DoctorDto
+            {
+                Id = dp.Id,
+                Specialty = dp.Specialty,
+                UserId = dp.UserId,
+                User = this.ConvertToUserDto(dp.User)
+            };
+            return doctorProfileDto;
+        }
+
+        public List<DoctorDto> ConvertToListDoctorDto(List<Doctor> list) { 
+            var listDto = list.Select(dp => this.ConvertToDoctorDto(dp)).ToList();
+
+            return listDto;
+        }
+
+        public PatientDto ConvertToPatientDto(Patient pp) {
+            var patientProfileDto = new PatientDto
+            {
+                Id = pp.Id,
+                HeightImperial = pp.HeightImperial,
+                WeightImperial = pp.WeightImperial,
+                UserId = pp.UserId,
+                User = this.ConvertToUserDto(pp.User)
+            };
+            return patientProfileDto;
+        }
+
+        public List<PatientDto> ConvertToListPatientDto(List<Patient> list) { 
+            var listDto = list.Select(pp => this.ConvertToPatientDto(pp)).ToList();
+            return listDto;
         }
     }
 }
