@@ -64,6 +64,39 @@ namespace MedicalApptBookingSystemTest
                 }
             );
 
+            // SEEDING DOCTORS
+            context.Doctors.AddRange(
+                new Doctor
+                {
+                    Id = 1,
+                    Specialty = "General Physician",
+                    UserId = 2
+                },
+                new Doctor
+                {
+                    Id = 2,
+                    Specialty = "General Physician",
+                    UserId = 4
+                }
+                );
+
+            // SEEDING PATIENTS
+            context.Patients.AddRange(
+                new Patient
+                {
+                    Id = 1,
+                    HeightImperial = 50,
+                    WeightImperial = 150,
+                    UserId = 1
+                },
+                new Patient { 
+                    Id = 2,
+                    HeightImperial = 50,
+                    WeightImperial = 50,
+                    UserId = 3
+                }
+                );
+
             // SEEDING TIME SLOTS
             context.TimeSlots.AddRange(
                 new TimeSlot
@@ -72,7 +105,7 @@ namespace MedicalApptBookingSystemTest
                     Date = DateOnly.FromDateTime(DateTime.Today),
                     StartTime = TimeOnly.FromDateTime(DateTime.Now),
                     EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
-                    DoctorId = 2,
+                    DoctorId = 1,
                     IsBooked = true,
                 },
                 new TimeSlot
@@ -81,7 +114,7 @@ namespace MedicalApptBookingSystemTest
                     Date = DateOnly.FromDateTime(DateTime.Today),
                     StartTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
                     EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)),
-                    DoctorId = 2,
+                    DoctorId = 1,
                     IsBooked = true,
                 },
                 new TimeSlot
@@ -90,7 +123,7 @@ namespace MedicalApptBookingSystemTest
                     Date = DateOnly.FromDateTime(DateTime.Today),
                     StartTime = TimeOnly.FromDateTime(DateTime.Now),
                     EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
-                    DoctorId = 4,
+                    DoctorId = 2,
                     IsBooked = false,
                 },
                 new TimeSlot
@@ -99,7 +132,7 @@ namespace MedicalApptBookingSystemTest
                     Date = DateOnly.FromDateTime(DateTime.Today),
                     StartTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
                     EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)),
-                    DoctorId = 4,
+                    DoctorId = 2,
                     IsBooked = false,
                 }
                 
@@ -111,14 +144,14 @@ namespace MedicalApptBookingSystemTest
                 {
                     Id = 1,
                     PatientId = 1,
-                    DoctorId = 2,
+                    DoctorId = 1,
                     TimeSlotId = 1,
                     Notes = null
                 },
                 new Appointment
                 {
                     Id = 2,
-                    PatientId = 3,
+                    PatientId = 2,
                     DoctorId = 2,
                     TimeSlotId = 2,
                     Notes = null

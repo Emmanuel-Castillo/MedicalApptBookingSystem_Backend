@@ -34,7 +34,6 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
             // Arrange
             var doctorId = 2;
 
-
             _controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakeDoctor() }
@@ -58,7 +57,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
             Assert.Equal("doctor1@example.com", doctor.Email);
             Assert.Equal(UserRole.Doctor.ToString(), doctor.Role);
 
-            Assert.Single(timeSlots);
+            Assert.Empty(timeSlots);
         } 
         
         [Fact]

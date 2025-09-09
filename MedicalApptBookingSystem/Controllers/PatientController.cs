@@ -30,7 +30,7 @@ namespace MedicalApptBookingSystem.Controllers
         {
             try
             {
-                var patients = await _context.PatientProfiles.Include(pp => pp.User).ToListAsync();
+                var patients = await _context.Patients.Include(pp => pp.User).ToListAsync();
                 var usersDto = _convertToDto.ConvertToListPatientDto(patients);
                 return Ok(usersDto);
             }
@@ -58,7 +58,7 @@ namespace MedicalApptBookingSystem.Controllers
                     return Forbid("Trying to access another patient's information.");
 
                 // Finally, fetch patient from db
-                var patient = await _context.PatientProfiles.Include(pp => pp.User).FirstOrDefaultAsync(pp => pp.UserId == id);
+                var patient = await _context.Patients.Include(pp => pp.User).FirstOrDefaultAsync(pp => pp.UserId == id);
                 if (patient == null) return NotFound("User not found!");
 
                 // Fetch appts booked by patient for the current week

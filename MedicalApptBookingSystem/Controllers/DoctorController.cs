@@ -30,7 +30,7 @@ namespace MedicalApptBookingSystem.Controllers
         {
             try
             {
-                var doctors = await _context.DoctorProfiles.Include(dp => dp.User).ToListAsync();
+                var doctors = await _context.Doctors.Include(dp => dp.User).ToListAsync();
                 var listDoctorDtos = _convertToDto.ConvertToListDoctorDto(doctors);
                 return Ok(listDoctorDtos);
 
@@ -62,7 +62,7 @@ namespace MedicalApptBookingSystem.Controllers
                     return Forbid("Trying to access another doctor's information.");
 
                 // Fetch doctor's profile from db
-                var doctor = await _context.DoctorProfiles.Include(dp => dp.User).FirstOrDefaultAsync(dp => dp.UserId == doctorId);
+                var doctor = await _context.Doctors.Include(dp => dp.User).FirstOrDefaultAsync(dp => dp.UserId == doctorId);
                 if (doctor == null) return NotFound("User not found!");
 
                 // End date limit for timeSlots acquired

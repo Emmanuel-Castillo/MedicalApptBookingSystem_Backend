@@ -40,10 +40,10 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             var okResult = Assert.IsType<OkObjectResult>(result);           // Returns Ok
             var patientInfo = Assert.IsType<GetPatientInfoResponse>(okResult.Value);   // OkResult obj contains patient info
             
-            var profile = Assert.IsType<Patient>(patientInfo.PatientProfile);
+            var profile = Assert.IsType<PatientDto>(patientInfo.PatientProfile);
             var appointments = Assert.IsType<List<AppointmentDto>>(patientInfo.AppointmentsThisWeek);
 
-            var patient = Assert.IsType<UserDto>(profile);
+            var patient = Assert.IsType<UserDto>(profile.User);
 
             // Assert patient info is correct
             Assert.Equal(1, patient.Id);

@@ -27,7 +27,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);           // Returns Ok
-            var patients = Assert.IsType<List<UserDto>>(okResult.Value);   // OkResult obj contains list of UsersDto
+            var patients = Assert.IsType<List<PatientDto>>(okResult.Value);   // OkResult obj contains list of UsersDto
             Assert.Equal(2, patients.Count());                             // There are only 2 in the list
         }
     }

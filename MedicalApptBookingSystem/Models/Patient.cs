@@ -12,7 +12,7 @@ namespace MedicalApptBookingSystem.Models
 
         [ForeignKey("User")]
         public required int UserId { get; set; }
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         // Navigation to their booked appointments
         public ICollection<Appointment> Appointments { get; set; } = [];

@@ -38,8 +38,6 @@ namespace MedicalApptBookingSystemTest.Tests.AppointmentControllerTests
                 HttpContext = new DefaultHttpContext { User = HTTPUserContext.GetFakePatient() }
             };
 
-            var request = new GetPatientAppointmentsRequest { };
-
             // Act
             var response = await _controller.GetAppointmentAsync(1);
 
