@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "http://localhost:3001",
                 "https://localhost:3000",
-                "https://medical-appt-booking-system-fronten.vercel.app"
+                "https://emmanuel-castillo-medical-appt-booking-system.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
