@@ -118,6 +118,7 @@ namespace MedicalApptBookingSystem.Controllers
                 var query = _context.TimeSlots
                     .Where(ts => ts.DoctorId == id)
                     .Include(ts => ts.Doctor)
+                    .ThenInclude(d => d.User)
                     .OrderBy(t => t.Date);
 
                 // Total count calculates how many time slots exist
@@ -201,6 +202,7 @@ namespace MedicalApptBookingSystem.Controllers
                         d.StartDate <= weekEnd &&
                         d.EndDate >= weekStart)
                     .Include(d => d.Doctor)
+                    .ThenInclude(d => d.User)
                     .ToListAsync();
 
                 var availabilitesDto = _convertToDto.ConvertToListDoctorAvailDto(availabilities);

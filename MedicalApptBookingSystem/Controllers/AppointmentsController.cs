@@ -34,8 +34,10 @@ namespace MedicalApptBookingSystem.Controllers
 
                 var query = _context.Appointments
                     .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                     .Include(a => a.TimeSlot)
-                    .ThenInclude(ts => ts.Doctor);
+                    .ThenInclude(ts => ts.Doctor)
+                    .ThenInclude(d => d.User);
                 var totalCount = await query.CountAsync();
 
                 var appointments = await query
@@ -131,8 +133,10 @@ namespace MedicalApptBookingSystem.Controllers
                 // Fetch appointment
                 var appt = await _context.Appointments
                     .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                     .Include(a => a.TimeSlot)
                     .ThenInclude(ts => ts.Doctor)
+                    .ThenInclude(d => d.User)
                     .FirstOrDefaultAsync(appt => appt.Id == id);
 
                 if (appt == null) return NotFound("Appointment not found.");

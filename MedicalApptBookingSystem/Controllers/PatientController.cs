@@ -111,8 +111,10 @@ namespace MedicalApptBookingSystem.Controllers
                 var query = _context.Appointments
                     .Where(a => a.PatientId == id)
                     .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                     .Include(a => a.TimeSlot)
                     .ThenInclude(ts => ts.Doctor)
+                    .ThenInclude(d => d.User)
                     .OrderBy(a => a.TimeSlot.StartTime);
 
                 // Total count calculates how many appointments patient has booked

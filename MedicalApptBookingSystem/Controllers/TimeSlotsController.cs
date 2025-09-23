@@ -47,7 +47,7 @@ namespace MedicalApptBookingSystem.Controllers
                 if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Attempting to access another doctor's time slot.");
 
                 // Search for timeSlot if it exists
-                var timeSlot = await _context.TimeSlots.Where(ts => ts.Id == id).Include(ts => ts.Doctor).FirstOrDefaultAsync();
+                var timeSlot = await _context.TimeSlots.Where(ts => ts.Id == id).Include(ts => ts.Doctor).ThenInclude(d => d.User).FirstOrDefaultAsync();
                 if (timeSlot == null) return NotFound("Time slot not found!");
 
                 var timeSlotDto = _convertToDto.ConvertToTimeSlotDto(timeSlot);
@@ -167,6 +167,7 @@ namespace MedicalApptBookingSystem.Controllers
 
                 var query = _context.TimeSlots
                     .Include(t => t.Doctor)
+                    .ThenInclude(d => d.User)
                     .Where(ts => ts.Date >= DateOnly.FromDateTime(DateTime.Today))
                     .Where(t => !t.IsBooked)
                     .OrderBy(t => t.StartTime);
