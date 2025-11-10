@@ -4,6 +4,7 @@ using MedicalApptBookingSystem.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 
 namespace MedicalApptBookingSystem.Controllers
@@ -54,6 +55,29 @@ namespace MedicalApptBookingSystem.Controllers
                 return Ok(userDto);
             }
             catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // Endpoint accessible to all authorized Users with JWT token
+        // Retrieve own user data
+        // Called at frontend launch IF a token exists in local storage
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMyUser()
+        {
+            try {
+                var myUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (myUserId == null) return BadRequest("Invalid token.");
+
+                var user = await _context.Users.Where(u => u.Id == int.Parse(myUserId)).FirstOrDefaultAsync();
+                if (user == null) return NotFound("User not found!");
+
+                var userDto = _convertToDto.ConvertToUserDto(user);
+                return Ok(new { userDto });
+            }
+            catch(Exception ex)
             {
                 return BadRequest(ex.Message);
             }

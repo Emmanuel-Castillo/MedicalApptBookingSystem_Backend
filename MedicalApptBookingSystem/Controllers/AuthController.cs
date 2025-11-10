@@ -4,6 +4,7 @@ using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.DTO.Requests;
 using MedicalApptBookingSystem.Models;
 using MedicalApptBookingSystem.Services;
+using MedicalApptBookingSystem.Util;
 using MedicalApptBookingSystemTest;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +20,16 @@ namespace MedicalApptBookingSystem.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ConvertToDto _convertToDto;
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
 
-        public AuthController(ApplicationDbContext context, IAuthService authService, IEmailService emailService)
+        public AuthController(ApplicationDbContext context, IAuthService authService, IEmailService emailService, ConvertToDto convertToDto)
         {
             _context = context;
             _authService = authService;
             _emailService = emailService;
+            _convertToDto = convertToDto;
         }
 
         // Endpoint accessible for all Users
@@ -81,20 +84,20 @@ namespace MedicalApptBookingSystem.Controllers
             try { 
                 // Check if user credentials exist in the db, and if both email and password match
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-                if (user == null || user.PasswordHash != HashPassword(dto.Password))
+                if (user == null) return NotFound($"User with email ({dto.Email}) doesn't exist.");
+                if (user.PasswordHash != HashPassword(dto.Password))
                 {
                     return Unauthorized("Invalid credentials.");
                 }
 
                 // Once credentials are verified, generate JWT token and return back to user for user authentication
                 var token = _authService.GenerateToken(user);
-                var res = new { token };
-                return Ok(new { token });
+                var userDto = _convertToDto.ConvertToUserDto(user);
+                return Ok(new { token, userDto });
             }
             catch (Exception ex) {
                 return BadRequest(ex.Message);
             }
-            
         }
 
         [HttpPost("forgot-password")]
