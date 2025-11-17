@@ -56,7 +56,7 @@ namespace MedicalApptBookingSystem.Controllers
                 if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
                     return BadRequest("Email already registered.");
 
-                // Create new User and save to db
+                // Create new User and Patient profile and save to db
                 var user = new User
                 {
                     FullName = dto.FullName,
@@ -64,11 +64,33 @@ namespace MedicalApptBookingSystem.Controllers
                     PasswordHash = HashPassword(dto.Password),
                     Role = Enum.Parse<UserRole>(dto.Role, true)
                 };
-
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                return Ok("Registration successful");
+                if (dto.Role == "Patient")
+                {
+                    var patient = new Patient
+                    {
+                        UserId = user.Id,
+                        HeightImperial = 70,
+                        WeightImperial = 3100
+                    };
+                    _context.Patients.Add(patient);
+                    await _context.SaveChangesAsync();
+                } else if (dto.Role == "Doctor")
+                {
+                    var doctor = new Doctor
+                    {
+                        UserId = user.Id,
+                    };
+                    _context.Doctors.Add(doctor);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Once credentials are verified, generate JWT token and return back to user for user authentication
+                var token = _authService.GenerateToken(user);
+                var userDto = _convertToDto.ConvertToUserDto(user);
+                return Ok(new { message = "Registration successful", token, userDto });
             }
             catch (Exception ex) { 
                 return BadRequest(ex.Message);
@@ -93,7 +115,7 @@ namespace MedicalApptBookingSystem.Controllers
                 // Once credentials are verified, generate JWT token and return back to user for user authentication
                 var token = _authService.GenerateToken(user);
                 var userDto = _convertToDto.ConvertToUserDto(user);
-                return Ok(new { token, userDto });
+                return Ok(new { message = "Login successful", token, userDto });
             }
             catch (Exception ex) {
                 return BadRequest(ex.Message);

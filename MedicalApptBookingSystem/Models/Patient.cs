@@ -4,7 +4,7 @@ namespace MedicalApptBookingSystem.Models
 {
     public class Patient
     {
-        public required int Id { get; set; }
+        public int Id { get; set; }
 
         public required float HeightImperial { get; set; }
 

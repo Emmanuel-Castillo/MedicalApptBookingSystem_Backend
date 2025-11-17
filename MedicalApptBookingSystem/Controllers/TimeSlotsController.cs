@@ -60,7 +60,7 @@ namespace MedicalApptBookingSystem.Controllers
                 // If time slot is booked, return appointment that references this time slot
                 if (timeSlot.IsBooked)
                 {
-                    var appointment = await _context.Appointments.Where(a => a.TimeSlotId == timeSlot.Id).Include(a => a.TimeSlot.Doctor).Include(a => a.Patient).FirstOrDefaultAsync();
+                    var appointment = await _context.Appointments.Where(a => a.TimeSlotId == timeSlot.Id).Include(a => a.TimeSlot.Doctor).ThenInclude(d => d.User).Include(a => a.Patient).ThenInclude(p => p.User).FirstOrDefaultAsync();
                     if (appointment != null)
                     {
                         var appointmentDto = _convertToDto.ConvertToAppointmentDto(appointment);

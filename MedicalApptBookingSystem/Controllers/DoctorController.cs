@@ -25,7 +25,7 @@ namespace MedicalApptBookingSystem.Controllers
         // Endpoint accessible for Admins ONLY
         // Retrieve ALL doctor profiles
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> GetAllDoctorsAsync()
         {
             try
@@ -112,7 +112,11 @@ namespace MedicalApptBookingSystem.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
                 if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
-                if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Attempting to access another doctor's time slots.");
+
+                var doctor = await _context.Doctors.Where(d => d.UserId == int.Parse(userId)).FirstOrDefaultAsync();
+                if (doctor == null) return NotFound("Doctor not found!");
+
+                if (userRole == "Doctor" && doctor.Id != id) return Forbid("Attempting to access another doctor's time slots.");
 
                 // Query to fetch all time slots by this doctor
                 var query = _context.TimeSlots
@@ -154,9 +158,11 @@ namespace MedicalApptBookingSystem.Controllers
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
 
-                if (userId == null || userRole == null) return Forbid("Unauthorized access to this endpoint is prohibited!");
-                if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Doctor cannot access another doctor's availability.");
+                var doctor = await _context.Doctors.Where(d => d.UserId == int.Parse(userId)).FirstOrDefaultAsync();
+                if (doctor == null) return NotFound("Doctor not found!");
+                if (userRole == "Doctor" && doctor.Id != id) return Forbid("Doctor cannot access another doctor's availability.");
 
                 // Query to fetch all availabilities set by this doctor
                 var query = _context.DoctorAvailability
@@ -189,9 +195,11 @@ namespace MedicalApptBookingSystem.Controllers
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
 
-                if (userId == null || userRole == null) return Forbid("Unauthorized access to this endpoint is prohibited!");
-                if (userRole == "Doctor" && int.Parse(userId) != id) return Forbid("Doctor cannot access another doctor's availability.");
+                var doctor = await _context.Doctors.Where(d => d.UserId == int.Parse(userId)).FirstOrDefaultAsync();
+                if (doctor == null) return NotFound("Doctor not found!");
+                if (userRole == "Doctor" && doctor.Id != id) return Forbid("Doctor cannot access another doctor's availability.");
 
                 var today = DateOnly.FromDateTime(DateTime.Today);
                 int delta = DayOfWeek.Monday - today.DayOfWeek;

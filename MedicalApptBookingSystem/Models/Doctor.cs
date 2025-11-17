@@ -5,8 +5,8 @@ namespace MedicalApptBookingSystem.Models
 {
     public class Doctor
     {
-        public required int Id { get; set; }
-        public required string Specialty { get; set; } = "General Physician";
+        public int Id { get; set; }
+        public string Specialty { get; set; } = "General Physician";
 
         [ForeignKey("User")]
         public required int UserId { get; set; }
