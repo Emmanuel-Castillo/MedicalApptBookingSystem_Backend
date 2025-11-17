@@ -3,6 +3,7 @@ using MedicalApptBookingSystem.Data;
 using MedicalApptBookingSystem.DTO;
 using MedicalApptBookingSystem.Models;
 using MedicalApptBookingSystem.Services;
+using MedicalApptBookingSystem.Util;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -13,15 +14,18 @@ namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
         private readonly ApplicationDbContext _context;
         private readonly Mock<IAuthService> _mockAuthService;
         private readonly AuthController _controller;
+        private readonly ConvertToDto _convertToDto;
 
         public LoginTests()
         {
             // _context already contains seeded User data
             _context = TestDbContextFactory.Create();
+            _convertToDto = new ConvertToDto();
 
             // Set up the mock AuthService
             _mockAuthService = new Mock<IAuthService>();
             var _emailService = new Mock<IEmailService>();
+
 
             // Mock the token so we know what to expect
             // Argument we pass to GenerateToken is a Mock of type User
@@ -31,7 +35,7 @@ namespace MedicalApptBookingSystemTest.Tests.AuthControllerTests
 
 
             // Inject the mock AuthService into controller
-            _controller = new AuthController(_context, _mockAuthService.Object, _emailService.Object);
+            _controller = new AuthController(_context, _mockAuthService.Object, _emailService.Object, _convertToDto);
         }
         
         [Fact]

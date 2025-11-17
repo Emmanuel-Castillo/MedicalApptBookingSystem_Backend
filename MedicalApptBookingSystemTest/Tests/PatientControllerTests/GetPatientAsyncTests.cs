@@ -34,7 +34,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             };
 
             // Act -- Pass patientId to controller
-            var result = await _controller.GetPatientAsync(patientId);
+            var result = await _controller.GetPatientByUserIdAsync(patientId);
 
             // Assert -- Returns Ok and Patient1's info
             var okResult = Assert.IsType<OkObjectResult>(result);           // Returns Ok
@@ -61,7 +61,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             var patientId = 1;
 
             // Act -- Pass patientId to controller
-            var result = await _controller.GetPatientAsync(patientId);
+            var result = await _controller.GetPatientByUserIdAsync(patientId);
 
             // Assert -- Returns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
@@ -86,7 +86,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             };
 
             // Act -- Pass patientId to controller
-            var result = await _controller.GetPatientAsync(patientId);
+            var result = await _controller.GetPatientByUserIdAsync(patientId);
 
             // Assert -- Returns BadRequest
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
@@ -116,7 +116,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             };
 
             // Act -- Pass patientId to controller
-            var result = await _controller.GetPatientAsync(patientId);
+            var result = await _controller.GetPatientByUserIdAsync(patientId);
 
             // Assert -- Returns Forbid
             var forbidRes = Assert.IsType<ForbidResult>(result);
@@ -145,7 +145,7 @@ namespace MedicalApptBookingSystemTest.Tests.PatientControllerTests
             };
 
             // Act
-            var result = await _controller.GetPatientAsync(patientId);
+            var result = await _controller.GetPatientByUserIdAsync(patientId);
 
             // Assert
             var notFoundRes = Assert.IsType<NotFoundObjectResult>(result);
