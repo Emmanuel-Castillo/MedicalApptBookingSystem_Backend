@@ -98,7 +98,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
 
             // Assert
             var badRequestRes = Assert.IsType<BadRequestObjectResult>(result);
-                Assert.Equal("User Id Not Defined!", badRequestRes.Value);
+                Assert.Equal("User Id or Role Not Defined!", badRequestRes.Value);
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
 
             // Assert
             var forbidRes = Assert.IsType<ForbidResult>(result);
-            Assert.Equal("Trying to access another doctor's information.", forbidRes.AuthenticationSchemes[0]);
+            Assert.Equal("Trying to access another Doctor's information.", forbidRes.AuthenticationSchemes[0]);
 
         }
 
