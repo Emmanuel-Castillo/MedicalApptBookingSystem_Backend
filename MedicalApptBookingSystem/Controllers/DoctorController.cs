@@ -61,7 +61,7 @@ namespace MedicalApptBookingSystem.Controllers
                     return Forbid("Trying to access another Doctor's information.");
 
                 // Fetch doctor's profile from db
-                var doctor = await _context.Doctors.Include(dp => dp.User).Include(d => d.TimeSlots).ThenInclude(ts => ts.Doctor).ThenInclude(d => d.User).FirstOrDefaultAsync(dp => dp.UserId == doctorUserId);
+                var doctor = await _context.Doctors.Include(dp => dp.User).Include(d => d.TimeSlots).FirstOrDefaultAsync(dp => dp.UserId == doctorUserId);
                 if (doctor == null) return NotFound("User not found!");
 
                 // End date limit for timeSlots acquired

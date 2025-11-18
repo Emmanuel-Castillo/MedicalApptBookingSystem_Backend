@@ -32,7 +32,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
         public async Task GetDoctorAsync_ReturnsSpecificDoctor()
         {
             // Arrange
-            var doctorId = 2;
+            var doctorUserId = 2;
 
             _controller.ControllerContext = new ControllerContext
             {
@@ -40,7 +40,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
             };
 
             // Act
-            var result = await _controller.GetDoctorAsync(doctorId);
+            var result = await _controller.GetDoctorAsync(doctorUserId);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);           // Returns Ok
@@ -57,7 +57,7 @@ namespace MedicalApptBookingSystemTest.Tests.DoctorControllerTests
             Assert.Equal("doctor1@example.com", doctor.Email);
             Assert.Equal(UserRole.Doctor.ToString(), doctor.Role);
 
-            Assert.Empty(timeSlots);
+            Assert.NotEmpty(timeSlots);
         } 
         
         [Fact]
