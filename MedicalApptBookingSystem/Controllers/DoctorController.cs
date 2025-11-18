@@ -108,7 +108,7 @@ namespace MedicalApptBookingSystem.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
                 if (userId == null || userRole == null) return Unauthorized("Not authorized to use this endpoint.");
 
-                var doctor = await _context.Doctors.Include(d => d.TimeSlots).ThenInclude(ts => ts.Doctor).ThenInclude(d => d.User).Where(d => d.Id == doctorId).FirstOrDefaultAsync();
+                var doctor = await _context.Doctors.Include(d => d.TimeSlots).Include(d => d.User).FirstOrDefaultAsync(d => d.Id == doctorId);
                 if (doctor == null) return NotFound("Doctor not found!");
                 if (userRole == "Doctor" && doctor.UserId != int.Parse(userId)) return Forbid("Attempting to access another doctor's time slots.");
 
